@@ -1,0 +1,89 @@
+{
+  "name": "Social Media Automation",
+  "nodes": [
+    {
+      "name": "Trigger Schedule",
+      "type": "n8n-nodes-base.cron",
+      "parameters": {
+        "cronExpression": "0 9 * * *"
+      }
+    },
+    {
+      "name": "Generate Caption",
+      "type": "n8n-nodes-base.openai",
+      "parameters": {
+        "model": "gpt-3.5-turbo",
+        "prompt": "Create an engaging Instagram caption with hashtags for a product launch."
+      }
+    },
+    {
+      "name": "Create Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "parameters": {
+        "url": "https://api.canva.com/v1/designs",
+        "method": "POST",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "templateId": "template-id",
+          "text": "={{ $node['Generate Caption'].json.choices[0].message.content }}"
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": "Canva API"
+      }
+    },
+    {
+      "name": "Post to Instagram",
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "parameters": {
+        "resource": "instagramMedia",
+        "operation": "publish",
+        "caption": "={{ $node['Generate Caption'].json.choices[0].message.content }}",
+        "mediaAttachments": [
+          "={{ $node['Create Image'].json.url }}"
+        ]
+      },
+      "credentials": {
+        "facebookGraphApi": "Instagram Business"
+      }
+    }
+  ],
+  "connections": {
+    "Trigger Schedule": {
+      "main": [
+        [
+          {
+            "node": "Generate Caption",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Caption": {
+      "main": [
+        [
+          {
+            "node": "Create Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Image": {
+      "main": [
+        [
+          {
+            "node": "Post to Instagram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "id": "c9758d29-6040-4fe8-bb96-00d5bbd2821f"
+}

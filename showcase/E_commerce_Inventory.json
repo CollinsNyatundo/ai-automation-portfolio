@@ -1,0 +1,78 @@
+{
+  "name": "E-commerce Inventory",
+  "nodes": [
+    {
+      "name": "Trigger Schedule",
+      "type": "n8n-nodes-base.cron",
+      "parameters": {
+        "cronExpression": "0 */4 * * *"
+      }
+    },
+    {
+      "name": "Fetch Products",
+      "type": "n8n-nodes-base.shopify",
+      "parameters": {
+        "operation": "getAllProducts"
+      },
+      "credentials": {
+        "shopifyApi": "Shopify"
+      }
+    },
+    {
+      "name": "Generate Descriptions",
+      "type": "n8n-nodes-base.openai",
+      "parameters": {
+        "model": "gpt-3.5-turbo",
+        "prompt": "={{ 'Write a compelling product description for: ' + $json.title }}"
+      }
+    },
+    {
+      "name": "Update Product",
+      "type": "n8n-nodes-base.shopify",
+      "parameters": {
+        "operation": "updateProduct",
+        "productId": "={{ $json.id }}",
+        "descriptionHtml": "={{ $node['Generate Descriptions'].json.choices[0].message.content }}"
+      },
+      "credentials": {
+        "shopifyApi": "Shopify"
+      }
+    }
+  ],
+  "connections": {
+    "Trigger Schedule": {
+      "main": [
+        [
+          {
+            "node": "Fetch Products",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Products": {
+      "main": [
+        [
+          {
+            "node": "Generate Descriptions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Descriptions": {
+      "main": [
+        [
+          {
+            "node": "Update Product",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "id": "079578c6-6a58-4f32-a0e8-d2211d64e3f9"
+}

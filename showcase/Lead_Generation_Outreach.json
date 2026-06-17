@@ -1,0 +1,98 @@
+{
+  "name": "Lead Generation & Outreach",
+  "nodes": [
+    {
+      "name": "Trigger Manual",
+      "type": "n8n-nodes-base.manual",
+      "parameters": {}
+    },
+    {
+      "name": "Scrape LinkedIn",
+      "type": "n8n-nodes-base.httpRequest",
+      "parameters": {
+        "url": "={{ 'https://api.linkedin.com/v2/search?q=people&keywords=CEO' }}"
+      },
+      "credentials": {
+        "oAuth2Api": "LinkedIn API"
+      }
+    },
+    {
+      "name": "Enrich Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "parameters": {
+        "url": "={{ 'https://api.hunter.io/v2/domain-search?domain=' + $json.companyDomain + '&api_key=' + $credentials.httpHeaderAuth.apiKey }}"
+      },
+      "credentials": {
+        "httpHeaderAuth": "Hunter.io API"
+      }
+    },
+    {
+      "name": "Generate Email",
+      "type": "n8n-nodes-base.openai",
+      "parameters": {
+        "model": "gpt-3.5-turbo",
+        "prompt": "={{ 'Write a personalized outreach email to ' + $json.name + ' at ' + $json.companyDomain }}"
+      }
+    },
+    {
+      "name": "Send Email",
+      "type": "n8n-nodes-base.sendEmail",
+      "parameters": {
+        "fromEmail": "you@example.com",
+        "toEmail": "={{ $node['Generate Email'].json.to }}",
+        "subject": "={{ $node['Generate Email'].json.subject }}",
+        "text": "={{ $node['Generate Email'].json.body }}"
+      },
+      "credentials": {
+        "smtp": "SMTP Account"
+      }
+    }
+  ],
+  "connections": {
+    "Trigger Manual": {
+      "main": [
+        [
+          {
+            "node": "Scrape LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrape LinkedIn": {
+      "main": [
+        [
+          {
+            "node": "Enrich Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enrich Data": {
+      "main": [
+        [
+          {
+            "node": "Generate Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Email": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "id": "2818f416-560b-4f58-b17a-88029b83ea49"
+}

@@ -1,0 +1,86 @@
+{
+  "name": "Analytics & Reporting",
+  "nodes": [
+    {
+      "name": "Trigger Daily",
+      "type": "n8n-nodes-base.cron",
+      "parameters": {
+        "cronExpression": "0 6 * * *"
+      }
+    },
+    {
+      "name": "Pull Google Analytics Data",
+      "type": "n8n-nodes-base.googleAnalytics",
+      "parameters": {
+        "viewId": "UA-XXXXXX-Y",
+        "metrics": [
+          "ga:sessions",
+          "ga:users"
+        ],
+        "dimensions": [
+          "ga:date"
+        ]
+      },
+      "credentials": {
+        "googleAnalyticsOAuth2Api": "Google Analytics OAuth"
+      }
+    },
+    {
+      "name": "Generate Summary",
+      "type": "n8n-nodes-base.openai",
+      "parameters": {
+        "model": "gpt-3.5-turbo",
+        "prompt": "={{ 'Summarize this Google Analytics report: ' + JSON.stringify($json) }}"
+      }
+    },
+    {
+      "name": "Send Report Email",
+      "type": "n8n-nodes-base.sendEmail",
+      "parameters": {
+        "fromEmail": "reports@yourcompany.com",
+        "toEmail": "team@yourcompany.com",
+        "subject": "Daily Website Performance Summary",
+        "text": "={{ $node['Generate Summary'].json.choices[0].message.content }}"
+      },
+      "credentials": {
+        "smtp": "SMTP Account"
+      }
+    }
+  ],
+  "connections": {
+    "Trigger Daily": {
+      "main": [
+        [
+          {
+            "node": "Pull Google Analytics Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pull Google Analytics Data": {
+      "main": [
+        [
+          {
+            "node": "Generate Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Summary": {
+      "main": [
+        [
+          {
+            "node": "Send Report Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "id": "0c9cd888-48e7-4ef5-a96b-010234c71a3a"
+}

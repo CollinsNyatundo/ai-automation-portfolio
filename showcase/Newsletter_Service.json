@@ -1,0 +1,74 @@
+{
+  "name": "Newsletter Service",
+  "nodes": [
+    {
+      "name": "Trigger Weekly",
+      "type": "n8n-nodes-base.cron",
+      "parameters": {
+        "cronExpression": "0 7 * * 1"
+      }
+    },
+    {
+      "name": "Fetch Blog Posts",
+      "type": "n8n-nodes-base.httpRequest",
+      "parameters": {
+        "url": "https://yourwebsite.com/api/posts?filter=last-week"
+      }
+    },
+    {
+      "name": "Generate Newsletter",
+      "type": "n8n-nodes-base.openai",
+      "parameters": {
+        "model": "gpt-3.5-turbo",
+        "prompt": "={{ 'Create a newsletter draft based on these blog post titles: ' + JSON.stringify($json) }}"
+      }
+    },
+    {
+      "name": "Send via Mailchimp",
+      "type": "n8n-nodes-base.mailchimp",
+      "parameters": {
+        "operation": "sendCampaign",
+        "campaignId": "={{ $node['Generate Newsletter'].json.id }}"
+      },
+      "credentials": {
+        "mailchimpApi": "Mailchimp"
+      }
+    }
+  ],
+  "connections": {
+    "Trigger Weekly": {
+      "main": [
+        [
+          {
+            "node": "Fetch Blog Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Blog Posts": {
+      "main": [
+        [
+          {
+            "node": "Generate Newsletter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Newsletter": {
+      "main": [
+        [
+          {
+            "node": "Send via Mailchimp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "id": "71deb4b7-a256-4691-86eb-0780512ae0db"
+}

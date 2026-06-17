@@ -1,0 +1,75 @@
+{
+  "name": "Email Marketing",
+  "nodes": [
+    {
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "/email-trigger"
+      }
+    },
+    {
+      "name": "Segment Users",
+      "type": "n8n-nodes-base.function",
+      "parameters": {
+        "functionCode": "return items.filter(item => new Date(item.json.signupDate).getTime() > Date.now() - 7*24*60*60*1000);"
+      }
+    },
+    {
+      "name": "Generate Newsletter",
+      "type": "n8n-nodes-base.openai",
+      "parameters": {
+        "model": "gpt-3.5-turbo",
+        "prompt": "Summarize last week's top tips in marketing."
+      }
+    },
+    {
+      "name": "Send Campaign",
+      "type": "n8n-nodes-base.mailchimp",
+      "parameters": {
+        "operation": "sendCampaign",
+        "campaignId": "={{ $node['Generate Newsletter'].json.id }}"
+      },
+      "credentials": {
+        "mailchimpApi": "Mailchimp"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Segment Users",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Segment Users": {
+      "main": [
+        [
+          {
+            "node": "Generate Newsletter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Newsletter": {
+      "main": [
+        [
+          {
+            "node": "Send Campaign",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "id": "22547f6c-1577-4f8f-8c96-ade46586e7b9"
+}
