@@ -1,0 +1,398 @@
+{
+  "name": "Supply Chain Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}",
+        "options": {
+          "systemMessage": "# Overview\nYou are the RetroFuture Gadgetry Supply Chain Agent, managing the complex network of global suppliers for rare and vintage components. You track inventory levels, identify sourcing opportunities, and ensure continuous availability of unique materials for our artisanal gadgets.\n\n## Tools Available\n\n### Web Research\n- Vintage component markets\n- Supplier discovery\n- Material availability\n- Price trends\n\n### Inventory Management API\n- Stock levels tracking\n- Reorder points\n- Lead time monitoring\n- Cost analytics\n\n### Google BigQuery Analytics\n- Supplier performance data\n- Component usage trends\n- Cost optimization analysis\n- Quality metrics\n\n### Airtable Supplier Database\n- Vendor tracking\n- Component catalog\n- Quality ratings\n- Alternative sources\n\n### Slack Supply Updates\n- Stock alerts\n- New supplier notifications\n- Quality issues\n- Price changes\n\n## Key Suppliers\n### Metalwork Components\n- Victorian Brass Works (UK)\n- Steampunk Supply Co. (Germany)\n- Vintage Gear House (USA)\n- Clockwork Components Ltd. (Switzerland)\n\n### Electronics & LEDs\n- Retro Tech Parts (Japan)\n- Nixie Dreams (Ukraine)\n- Edison Elements (USA)\n- Vacuum Tube Vault (Russia)\n\n### Specialty Materials\n- Antique Leather Goods (Italy)\n- Reclaimed Wood Artisans (Canada)\n- Patina Chemicals Inc. (USA)\n- Glass & Crystal Works (Czech Republic)\n\n## Inventory Focus Areas\n\n### Critical Components\n- Brass gears (various sizes)\n- Copper tubing & fittings\n- Vintage-style LEDs\n- Leather pieces\n- Wood inlays\n- Watch movements\n- Specialty fasteners\n\n### Sourcing Challenges\n- Rare vacuum tubes\n- Authentic vintage parts\n- Custom gear specifications\n- Period-correct materials\n- Limited edition components\n\n### Quality Standards\n- Material authenticity verification\n- Supplier reliability scores\n- Component testing protocols\n- Alternative source mapping\n\n### Strategic Inventory\n- Safety stock levels\n- Seasonal demand planning\n- Limited edition preparations\n- Rush order buffers\n\nMinimum order quantities:\n- Standard components: 50 units\n- Rare components: 10 units\n- Custom pieces: Negotiable\n\nCurrent Date/Time: {{ $now }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -100,
+        -160
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Supply Chain Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.2,
+      "position": [
+        -420,
+        80
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Anthropic Chat Model"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Search for component suppliers and materials",
+        "method": "POST",
+        "url": "https://api.tavily.com/search",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n    \"api_key\": \"{tavilyApiKey}\",\n    \"query\": \"{searchQuery}\",\n    \"search_depth\": \"advanced\",\n    \"include_answer\": true,\n    \"include_raw_content\": true,\n    \"max_results\": 10,\n    \"include_domains\": [\"etsy.com\", \"ebay.com\", \"alibaba.com\", \"steampunkgarage.com\", \"clockworkcomponents.com\"],\n    \"days\": 30\n}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "searchQuery",
+              "description": "Component or supplier search query",
+              "type": "string"
+            },
+            {
+              "name": "tavilyApiKey",
+              "description": "Tavily API key",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        -260,
+        120
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Component Research"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Access RetroFuture inventory data",
+        "url": "https://api.retrofuturegadgetry.com/v2/inventory/{endpoint}",
+        "sendQuery": true,
+        "parametersQuery": {
+          "values": [
+            {}
+          ]
+        },
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {}
+          ]
+        },
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "endpoint",
+              "description": "API endpoint (stock-levels/suppliers/reorder-points)",
+              "type": "string"
+            },
+            {
+              "name": "componentType",
+              "description": "Type of component",
+              "type": "string"
+            },
+            {
+              "name": "supplier",
+              "description": "Specific supplier",
+              "type": "string"
+            },
+            {
+              "name": "urgency",
+              "description": "Urgency level for reorder",
+              "type": "string"
+            },
+            {
+              "name": "apiKey",
+              "description": "RetroFuture API Key",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        -60,
+        140
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Inventory Data API"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "retrofuture-supply-chain",
+          "mode": "list",
+          "cachedResultName": "Supply Chain"
+        },
+        "table": {
+          "__rl": true,
+          "value": "suppliers-components",
+          "mode": "list",
+          "cachedResultName": "Suppliers & Components"
+        },
+        "filterByFormula": "={{ $fromAI(\"airtableFilter\", \"\") }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtableTool",
+      "typeVersion": 2.1,
+      "position": [
+        100,
+        140
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Supplier Database"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "retrofuture-supply-chain",
+          "mode": "list",
+          "cachedResultName": "Supply Chain"
+        },
+        "table": {
+          "__rl": true,
+          "value": "sourcing-opportunities",
+          "mode": "list",
+          "cachedResultName": "Sourcing Opportunities"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "componentName": "={{ $fromAI(\"componentName\") }}",
+            "supplier": "={{ $fromAI(\"supplier\") }}",
+            "type": "={{ $fromAI(\"componentType\") }}",
+            "unitCost": "={{ $fromAI(\"unitCost\") }}",
+            "minimumOrder": "={{ $fromAI(\"minimumOrder\") }}",
+            "leadTime": "={{ $fromAI(\"leadTime\") }}",
+            "qualityRating": "={{ $fromAI(\"qualityRating\") }}",
+            "notes": "={{ $fromAI(\"notes\") }}",
+            "identifiedDate": "={{ $now }}"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtableTool",
+      "typeVersion": 2.1,
+      "position": [
+        220,
+        100
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Log Sourcing Opportunity"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.slackTool",
+      "typeVersion": 1.4,
+      "position": [
+        -540,
+        440
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Share Supply Update",
+      "credentials": {}
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.googleDocsTool",
+      "typeVersion": 1.1,
+      "position": [
+        -540,
+        680
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Create Inventory Report",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $fromAI(\"recipientEmails\") }}",
+        "subject": "RetroFuture Supply Chain Alert: {{ $fromAI(\"alertSubject\") }}",
+        "message": "={{ $fromAI(\"emailContent\") }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        380,
+        100
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Send Supply Report",
+      "webhookId": "{{ WEBHOOK_ID }}"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "response-id",
+              "name": "response",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        480,
+        -260
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Response"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "error-response-id",
+              "name": "response",
+              "value": "Unable to process supply chain request. Please try again.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        480,
+        -60
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Try Again"
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -540,
+        -160
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "When Executed by Another Workflow"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Supply Chain Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Supply Chain Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Component Research": {
+      "ai_tool": [
+        [
+          {
+            "node": "Supply Chain Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inventory Data API": {
+      "ai_tool": [
+        [
+          {
+            "node": "Supply Chain Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supplier Database": {
+      "ai_tool": [
+        [
+          {
+            "node": "Supply Chain Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Sourcing Opportunity": {
+      "ai_tool": [
+        [
+          {
+            "node": "Supply Chain Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Supply Report": {
+      "ai_tool": [
+        [
+          {
+            "node": "Supply Chain Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supply Chain Agent": {
+      "main": [
+        [
+          {
+            "node": "Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Try Again",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "{{ VERSION_ID }}",
+  "meta": {
+    "instanceId": "{{ INSTANCE_ID }}"
+  },
+  "id": "3ece5b08-0d1c-4e91-8629-b23773d114bc",
+  "tags": []
+}

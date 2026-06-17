@@ -1,0 +1,302 @@
+{
+  "name": "Customer Experience Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}",
+        "options": {
+          "systemMessage": "# Overview\nYou are the RetroFuture Gadgetry Customer Experience Agent, dedicated to providing exceptional support throughout the custom gadget journey. You help customers from initial inquiry through delivery and beyond, ensuring each interaction reflects our artisanal craftsmanship values.\n\n## Tools Available\n\n### Airtable CRM\n- Manage customer accounts\n- Track order history\n- Monitor satisfaction scores\n- Document special requests\n\n### Gmail Communication\n- Send order updates\n- Provide care instructions\n- Share progress photos\n- Handle inquiries\n\n### Slack Support Channel\n- Real-time customer assistance\n- Quick issue resolution\n- Success story sharing\n\n### Google Sheets Order Tracking\n- Order status updates\n- Delivery tracking\n- Custom modification logs\n\n### Knowledge Base Access\n- Care guides\n- FAQ responses\n- Troubleshooting steps\n\n## Key Support Areas\n\n### Order Journey Support\n- Design consultation\n- Customization guidance\n- Progress updates\n- Delivery coordination\n\n### Product Care\n- Maintenance instructions\n- Patina preservation\n- Mechanism care\n- Repair guidance\n\n### Customer Success\n- Personalization ideas\n- Display suggestions\n- Gift recommendations\n- Collection building\n\n## Customer Experience Standards\n- Response time: <4 hours\n- Update frequency: Weekly\n- Photo updates: At key stages\n- Satisfaction target: 95%+\n\n## Common Inquiries\n### Pre-Order\n- Customization options\n- Material choices\n- Timeline estimates\n- Pricing questions\n\n### During Production\n- Status updates\n- Modification requests\n- Progress photos\n- Delivery timing\n\n### Post-Delivery\n- Care instructions\n- Display ideas\n- Minor adjustments\n- Future orders\n\nAlways emphasize the handcrafted, unique nature of each piece.\n\nCurrent Date/Time: {{ $now }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -440,
+        140
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Customer Experience Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.2,
+      "position": [
+        -560,
+        360
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Anthropic Chat Model"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $fromAI(\"customerEmail\") }}",
+        "subject": "={{ $fromAI(\"emailSubject\", \"Your RetroFuture Gadget Update\") }}",
+        "message": "={{ $fromAI(\"emailBody\") }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        -400,
+        400
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Send Customer Email",
+      "webhookId": "{{ WEBHOOK_ID }}"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.4,
+      "position": [
+        -240,
+        380
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Get Order History"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.4,
+      "position": [
+        -80,
+        380
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Update Customer Record"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Generate care instructions for gadget",
+        "method": "POST",
+        "url": "https://api.retrofuturegadgetry.com/v1/support/care-guide",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {}
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"productType\": \"{productType}\",\n  \"materials\": {materials},\n  \"features\": {features},\n  \"includeVideo\": {includeVideo}\n}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "productType",
+              "description": "Type of gadget",
+              "type": "string"
+            },
+            {
+              "name": "materials",
+              "description": "Materials used",
+              "type": "json"
+            },
+            {
+              "name": "features",
+              "description": "Special features",
+              "type": "json"
+            },
+            {
+              "name": "includeVideo",
+              "description": "Include video guide link",
+              "type": "boolean"
+            },
+            {
+              "name": "apiKey",
+              "description": "RetroFuture API Key",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        -760,
+        980
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Generate Care Guide"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "response-id",
+              "name": "response",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        20,
+        40
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Response"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "error-response-id",
+              "name": "response",
+              "value": "Unable to process customer experience request. Please try again.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        20,
+        240
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Try Again"
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -760,
+        140
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "When Executed by Another Workflow"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Customer Experience Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Customer Experience Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Customer Email": {
+      "ai_tool": [
+        [
+          {
+            "node": "Customer Experience Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Order History": {
+      "ai_tool": [
+        [
+          {
+            "node": "Customer Experience Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Customer Record": {
+      "ai_tool": [
+        [
+          {
+            "node": "Customer Experience Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Care Guide": {
+      "ai_tool": [
+        []
+      ]
+    },
+    "Customer Experience Agent": {
+      "main": [
+        [
+          {
+            "node": "Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Try Again",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "{{ VERSION_ID }}",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "{{ INSTANCE_ID }}"
+  },
+  "id": "8cd8d6b8-e427-458b-950a-1bd96c77e856",
+  "tags": []
+}

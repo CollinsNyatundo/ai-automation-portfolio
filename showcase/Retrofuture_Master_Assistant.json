@@ -1,0 +1,302 @@
+{
+  "name": "Master Assistant Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}",
+        "options": {
+          "systemMessage": "# Overview\nYou are the RetroFuture Gadgetry Master Assistant, coordinating all operational activities for a creative workshop that handcrafts limited-edition retro-futuristic gadgets. Your role is to intelligently route queries to the appropriate specialized agent based on the request type.\n\n## Available Agents\n\n### artisanProductionAgent\nUse for:\n- Production scheduling and planning\n- Artisan assignments\n- Workshop coordination\n- Quality control processes\n- Crafting technique queries\n\n### customerExperienceAgent\nUse for:\n- Customer inquiries and support\n- Order status updates\n- Customization consultations\n- Product care instructions\n- Return and warranty issues\n\n### customOrdersAgent\nUse for:\n- New custom order creation\n- Personalization options\n- Design specifications\n- Order modifications\n- Pricing and quotes\n\n### supplyChainAgent\nUse for:\n- Component availability\n- Supplier information\n- Inventory levels\n- Material sourcing\n- Rare part procurement\n\n### workshopTechnicalAgent\nUse for:\n- Equipment maintenance\n- Tool specifications\n- Technique documentation\n- Safety protocols\n- Workshop setup\n\n### salesDesignAgent\nUse for:\n- New design launches\n- Limited edition drops\n- Customer inquiries\n- Partnership opportunities\n- Wholesale requests\n\n### orderAnalyticsAgent\nUse for:\n- Production metrics\n- Sales reporting\n- Customer analytics\n- Inventory analysis\n- Performance dashboards\n\n## Routing Rules\n1. Analyze the query to identify the primary business function\n2. For complex queries spanning multiple areas, break down into sub-tasks\n3. Route to the most appropriate agent(s)\n4. Consolidate responses for the user\n\n## Company Context\nRetroFuture Gadgetry specializes in handcrafted, limited-edition retro-futuristic gadgets with themes spanning steampunk, dieselpunk, atompunk, and art deco aesthetics. Each piece is made-to-order or in small batches with extensive customization options.\n\nCurrent Date/Time: {{ $now }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        1200,
+        -180
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "RetroFuture Master Assistant"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        640,
+        40
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "OpenAI Chat Model"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Chat Trigger').item.json.userId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        800,
+        40
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Conversation Memory"
+    },
+    {
+      "parameters": {
+        "name": "artisanProductionAgent",
+        "description": "Handles all gadget production scheduling, artisan assignments, and workshop operations",
+        "workflowId": {
+          "__rl": true,
+          "value": "{{ SUB_WORKFLOW_ID }}",
+          "mode": "list",
+          "cachedResultName": "{{ SUB_WORKFLOW_NAME }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        940,
+        40
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Artisan Production Agent"
+    },
+    {
+      "parameters": {
+        "name": "customerExperienceAgent",
+        "description": "Manages customer relationships, order updates, and product support",
+        "workflowId": {
+          "__rl": true,
+          "value": "{{ SUB_WORKFLOW_ID }}",
+          "mode": "list",
+          "cachedResultName": "{{ SUB_WORKFLOW_NAME }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        40
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Customer Experience Agent"
+    },
+    {
+      "parameters": {
+        "name": "customOrdersAgent",
+        "description": "Creates and manages custom gadget orders with personalization options",
+        "workflowId": {
+          "__rl": true,
+          "value": "{{ SUB_WORKFLOW_ID }}",
+          "mode": "list",
+          "cachedResultName": "{{ SUB_WORKFLOW_NAME }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        1220,
+        40
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Custom Orders Agent"
+    },
+    {
+      "parameters": {
+        "name": "supplyChainAgent",
+        "description": "Manages component inventory, supplier relationships, and material sourcing",
+        "workflowId": {
+          "__rl": true,
+          "value": "{{ SUB_WORKFLOW_ID }}",
+          "mode": "list",
+          "cachedResultName": "{{ SUB_WORKFLOW_NAME }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        1340,
+        40
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Supply Chain Agent"
+    },
+    {
+      "parameters": {
+        "name": "workshopTechnicalAgent",
+        "description": "Handles workshop equipment, tools, techniques, and safety protocols",
+        "workflowId": {
+          "__rl": true,
+          "value": "{{ SUB_WORKFLOW_ID }}",
+          "mode": "list",
+          "cachedResultName": "{{ SUB_WORKFLOW_NAME }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        1500,
+        40
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Workshop Technical Agent"
+    },
+    {
+      "parameters": {
+        "name": "salesDesignAgent",
+        "description": "Manages new design launches, limited editions, and sales opportunities",
+        "workflowId": {
+          "__rl": true,
+          "value": "{{ SUB_WORKFLOW_ID }}",
+          "mode": "list",
+          "cachedResultName": "{{ SUB_WORKFLOW_NAME }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        1660,
+        40
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Sales Design Agent"
+    },
+    {
+      "parameters": {
+        "name": "orderAnalyticsAgent",
+        "description": "Provides detailed analytics on orders, production, and business metrics",
+        "workflowId": {
+          "__rl": true,
+          "value": "{{ SUB_WORKFLOW_ID }}",
+          "mode": "list",
+          "cachedResultName": "{{ SUB_WORKFLOW_NAME }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        1840,
+        40
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Order Analytics Agent"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "RetroFuture Master Assistant",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "RetroFuture Master Assistant",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Artisan Production Agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "RetroFuture Master Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Customer Experience Agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "RetroFuture Master Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Custom Orders Agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "RetroFuture Master Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supply Chain Agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "RetroFuture Master Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workshop Technical Agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "RetroFuture Master Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sales Design Agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "RetroFuture Master Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Order Analytics Agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "RetroFuture Master Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "{{ VERSION_ID }}",
+  "meta": {
+    "instanceId": "{{ INSTANCE_ID }}"
+  },
+  "id": "af25639c-75b8-45f2-a72a-651dde774aac",
+  "tags": []
+}

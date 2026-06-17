@@ -1,0 +1,2989 @@
+{
+  "name": "Real Estate Lead Automation Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "lead",
+        "event": "newOrUpdatedLead"
+      },
+      "id": "1",
+      "name": "GoHighLevel Trigger",
+      "type": "n8n-nodes-base.highLevelTrigger",
+      "typeVersion": 1,
+      "position": [
+        100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "lead",
+        "operation": "get"
+      },
+      "id": "2",
+      "name": "HighLevel - Get Lead",
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 1,
+      "position": [
+        300,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json }}",
+        "options": {
+          "systemMessage": "# Real Estate Automation Agent\n\nYou are an AI agent for a real estate brokerage. Your responsibilities:\n- Qualify leads, assign agents, recommend next actions, orchestrate workflow, and coordinate with specialized agents.\n\n## Tools (callable)\n- HighLevel CRM: update leads, create tasks, move pipeline stages.\n- Google Calendar: schedule calls, showings, open houses.\n- Gmail: send emails, attach brochures, CC/BCC as needed.\n- Slack: notify team, request manager approval, route to channels.\n- Google Sheets: log leads, errors, analytics.\n- DocuSign: send/track e-signature documents.\n- Twilio: send SMS notifications and reminders.\n- Notion: access knowledge base and SOPs.\n- Zapier: trigger external automations.\n- Compliance Review Agent: review for regulatory/compliance issues.\n- Follow-Up Optimization Agent: optimize follow-up timing and channel.\n- Analytics Insights Agent: generate insights and recommendations from workflow data.\n\n## Business Rules\n- Qualify leads using propertyType, urgency, language, campaignSource, location, and priceRange.\n- Assign agents by specialty, language, region, workload, and priceRange.\n  - If language is Spanish and location is Miami, assign to Maria.\n  - If priceRange > 2000000, assign to 'Luxury Team'.\n  - If no agent matches, assign to 'General Pool' and flag for review.\n- Escalate leads with score >= 9 to manager for approval.\n- If urgency is 'High' and propertyType is 'Commercial', flag for compliance review.\n- If campaignSource is 'Referral', increase score by 2.\n- If propertyType is 'Commercial' and urgency is 'High', send to Compliance Review Agent.\n- Use DocuSign for all contract-related actions.\n- Use Twilio for urgent SMS notifications.\n- Use Notion for referencing policies and procedures.\n- Use Zapier for integrations with external systems.\n- Recommend next actions: call, email, SMS, nurture, escalate, schedule showing, open house, send contract.\n- Log all actions and decisions.\n- Use human-in-the-loop for approvals and agent feedback.\n- Coordinate with specialized agents as needed.\n\n## Output JSON\n{\n  qualified: boolean,\n  score: number,\n  agent: string,\n  action: string,\n  summary: string,\n  note: string,\n  escalate: boolean,\n  approvalRequired: boolean,\n  complianceFlag: boolean,\n  followUpRecommendation: string,\n  analyticsInsight: string\n}\n\n## Fallbacks\n- If required data is missing, request it via Slack.\n- If a tool fails, log the error and notify admin.\n- If complianceFlag is true, route to Compliance Review Agent.\n- If followUpRecommendation is needed, call Follow-Up Optimization Agent.\n- If analyticsInsight is needed, call Analytics Insights Agent.\n",
+          "tools": [
+            {
+              "name": "HighLevel CRM",
+              "description": "update leads, create tasks, move pipeline stages"
+            },
+            {
+              "name": "Google Calendar",
+              "description": "schedule calls, showings, open houses"
+            },
+            {
+              "name": "Gmail",
+              "description": "send emails, attach brochures, CC/BCC as needed"
+            },
+            {
+              "name": "Slack",
+              "description": "notify team, request manager approval, route to channels"
+            },
+            {
+              "name": "Google Sheets",
+              "description": "log leads, errors, analytics"
+            },
+            {
+              "name": "DocuSign",
+              "description": "send/track e-signature documents"
+            },
+            {
+              "name": "Twilio",
+              "description": "send SMS notifications and reminders"
+            },
+            {
+              "name": "Notion",
+              "description": "access knowledge base and SOPs"
+            },
+            {
+              "name": "Zapier",
+              "description": "trigger external automations"
+            },
+            {
+              "name": "Compliance Review Agent",
+              "description": "review for regulatory/compliance issues"
+            },
+            {
+              "name": "Follow-Up Optimization Agent",
+              "description": "optimize follow-up timing and channel"
+            },
+            {
+              "name": "Analytics Insights Agent",
+              "description": "generate insights and recommendations from workflow data"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        400,
+        250
+      ],
+      "id": "ai-agent-node-1",
+      "name": "Real Estate AI Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json }}",
+        "options": {
+          "systemMessage": "# Compliance Review Agent\n\nYou are a compliance review agent for a real estate brokerage. Review the lead and workflow for regulatory and legal compliance. Flag any issues and recommend actions.\n\n## Output JSON\n{ compliancePassed: boolean, issues: string, recommendedActions: string }\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        700,
+        250
+      ],
+      "id": "compliance-agent-node-1",
+      "name": "Compliance Review Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json }}",
+        "options": {
+          "systemMessage": "# Follow-Up Optimization Agent\n\nYou are a follow-up optimization agent for a real estate brokerage. Analyze the lead and workflow data to recommend the best timing and channel for follow-up.\n\n## Output JSON\n{ recommendedTime: string, recommendedChannel: string, rationale: string }\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        700,
+        350
+      ],
+      "id": "followup-agent-node-1",
+      "name": "Follow-Up Optimization Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json }}",
+        "options": {
+          "systemMessage": "# Analytics Insights Agent\n\nYou are an analytics insights agent for a real estate brokerage. Analyze workflow and lead data to generate actionable insights and recommendations.\n\n## Output JSON\n{ insight: string, recommendation: string }\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        700,
+        450
+      ],
+      "id": "analytics-agent-node-1",
+      "name": "Analytics Insights Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        200,
+        250
+      ],
+      "id": "llm-node-1",
+      "name": "OpenAI Chat Model"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "sheetId": "{{$env.SHEET_ID}}",
+        "range": "Leads!A1",
+        "valueInputMode": "USER_ENTERED",
+        "fields": [
+          "leadId",
+          "name",
+          "email",
+          "phone",
+          "propertyType",
+          "language",
+          "urgency",
+          "campaignSource",
+          "location",
+          "priceRange",
+          "status",
+          "qualified",
+          "score",
+          "agent",
+          "action",
+          "summary",
+          "note",
+          "lastContactDate",
+          "createdAt"
+        ]
+      },
+      "id": "4",
+      "name": "Google Sheets - Log Lead",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 1,
+      "position": [
+        700,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "to": "={{$json[\"email\"]}}",
+        "subject": "={{$json[\"propertyType\"] === 'Seller' ? 'Thank you for listing with us, ' + $json[\"name\"] : ($json[\"propertyType\"] === 'Renter' ? 'Rental Inquiry Received, ' + $json[\"name\"] : 'Welcome, ' + $json[\"name\"] + '! Your real estate inquiry')}}",
+        "message": "={{$json[\"propertyType\"] === 'Seller' ? 'Hi ' + $json[\"name\"] + ',\n\nThank you for listing your property. Our agent ' + $json[\"agent\"] + ' will reach out to discuss next steps.' : ($json[\"propertyType\"] === 'Renter' ? 'Hi ' + $json[\"name\"] + ',\n\nThank you for your rental inquiry. Our agent ' + $json[\"agent\"] + ' will contact you soon.' : 'Hi ' + $json[\"name\"] + ',\n\nThank you for your interest in our real estate services. Our agent ' + $json[\"agent\"] + ' will contact you soon.')}}\n\nBest regards,\nYour Brokerage Team",
+        "attachments": [
+          "={{$json[\"propertyType\"] + '_BROCHURE.pdf'}}"
+        ],
+        "cc": "={{$json[\"score\"] >= 8 ? 'manager@yourbrokerage.com' : ''}}",
+        "bcc": "compliance@yourbrokerage.com"
+      },
+      "id": "5",
+      "name": "Gmail - Send Welcome Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 1,
+      "position": [
+        700,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "channel": "={{$json[\"urgency\"] === 'High' ? '#urgent-leads' : ($json[\"agent\"] ? '#agent-' + $json[\"agent\"] : '#new-leads')}}",
+        "text": "New {{$json[\"propertyType\"]}} lead: {{$json[\"name\"]}} ({{$json[\"email\"]}}), assigned to {{$json[\"agent\"]}}. Action: {{$json[\"action\"]}}. {{$json[\"score\"] >= 8 ? 'Manager approval required. <@manager> [Approve](#) [Reject](#)' : ''}}",
+        "mentions": [
+          "={{$json[\"agent\"]}}",
+          "={{$json[\"score\"] >= 8 ? 'manager' : ''}}"
+        ]
+      },
+      "id": "6",
+      "name": "Slack - Notify Team",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [
+        700,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "calendarId": "{{$env.CALENDAR_ID}}",
+        "operation": "create",
+        "start": "={{$json[\"preferredTime\"] || $now}}",
+        "end": "={{$json[\"preferredTime\"] ? $json[\"preferredTime\"] + 3600000 : $now + 3600000}}",
+        "summary": "={{$json[\"action\"] === 'schedule showing' ? 'Showing with ' + $json[\"name\"] : ($json[\"action\"] === 'open house' ? 'Open House for ' + $json[\"name\"] : 'Call with ' + $json[\"name\"] )}}",
+        "description": "Auto-scheduled by workflow. Agent: {{$json[\"agent\"]}}. Action: {{$json[\"action\"]}}.",
+        "attendees": [
+          "={{$json[\"email\"]}}",
+          "={{$json[\"agentEmail\"]}}",
+          "={{$json[\"score\"] >= 8 ? 'manager@yourbrokerage.com' : ''}}"
+        ],
+        "timeZone": "={{$json[\"timeZone\"] || 'America/New_York'}}"
+      },
+      "id": "7",
+      "name": "Google Calendar - Schedule Call/Showing",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1,
+      "position": [
+        900,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "lead",
+        "operation": "update",
+        "leadId": "={{$json[\"leadId\"]}}",
+        "pipelineStage": "={{$json[\"action\"] === 'escalate' ? 'Escalated' : ($json[\"qualified\"] === true ? 'Qualified' : 'Unqualified')}}",
+        "task": {
+          "create": true,
+          "title": "Follow-up: {{$json[\"action\"]}}",
+          "assignedTo": "={{$json[\"agent\"]}}",
+          "dueDate": "={{$json[\"action\"] === 'schedule showing' ? $json[\"preferredTime\"] : $now + 86400000}}",
+          "reminder": "={{$json[\"urgency\"] === 'High' ? '1h' : '24h'}}"
+        },
+        "managerApproval": "={{$json[\"score\"] >= 8 ? 'pending' : 'not required'}}",
+        "updateIfQualified": "={{$json[\"qualified\"] === true}}"
+      },
+      "id": "8",
+      "name": "HighLevel - Update Lead & Create Task",
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        300
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "9",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        100,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "sheetId": "YOUR_ERROR_LOG_SHEET_ID",
+        "range": "Errors!A1",
+        "valueInputMode": "USER_ENTERED",
+        "fields": [
+          "timestamp",
+          "workflow",
+          "error",
+          "node",
+          "inputData",
+          "outputData",
+          "adminNotified"
+        ]
+      },
+      "id": "10",
+      "name": "Google Sheets - Log Error",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 1,
+      "position": [
+        300,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "channel": "={{$json[\"errorType\"] === 'CRM' ? '#crm-admins' : ($json[\"errorType\"] === 'AI' ? '#ai-admins' : '#admin-alerts')}}",
+        "text": "Workflow error in {{$json[\"workflow\"]}} at node {{$json[\"node\"]}}: {{$json[\"error\"]}}. Input: {{$json[\"inputData\"]}} Output: {{$json[\"outputData\"]}}"
+      },
+      "id": "11",
+      "name": "Slack - Notify Admins",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [
+        500,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "everyWeek",
+        "hour": 8,
+        "minute": 0
+      },
+      "id": "12",
+      "name": "Cron - Weekly Report",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        100,
+        900
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "sheetId": "YOUR_ANALYTICS_SHEET_ID",
+        "range": "Reports!A1",
+        "valueInputMode": "USER_ENTERED",
+        "fields": [
+          "week",
+          "totalLeads",
+          "qualifiedLeads",
+          "conversionRate",
+          "topAgent",
+          "avgResponseTime",
+          "leadsBySource",
+          "agentPerformance",
+          "notes"
+        ]
+      },
+      "id": "13",
+      "name": "Google Sheets - Write Weekly Report",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 1,
+      "position": [
+        300,
+        900
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "custom",
+        "description": "Retry or escalate error if not resolved after 3 attempts (placeholder for retry logic)"
+      },
+      "id": "15",
+      "name": "Error Retry/Escalation (Placeholder)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        700,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "custom",
+        "description": "Require manager approval for high-value/sensitive leads (score >= 8), and allow agent feedback on AI recommendations (placeholder for human-in-the-loop logic)"
+      },
+      "id": "16",
+      "name": "Human-in-the-Loop (Placeholder)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        1300,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "custom",
+        "description": "Push summary data to BI/dashboard (placeholder for integration with Looker, PowerBI, etc.)"
+      },
+      "id": "14",
+      "name": "BI/Dashboard Integration (Placeholder)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        500,
+        900
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.complianceFlag}}",
+              "operation": "is true"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        250
+      ],
+      "id": "if-compliance-flag",
+      "name": "If Compliance Flag"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.action}}",
+              "operation": "in",
+              "value2": "nurture,call,schedule showing"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        350
+      ],
+      "id": "if-followup-needed",
+      "name": "If Follow-Up Needed"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.analyticsInsight}}",
+              "operation": "is not empty"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        450
+      ],
+      "id": "if-analytics-needed",
+      "name": "If Analytics Needed"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{$json.priceRange}}",
+              "operation": ">",
+              "value2": 2000000
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        -2200
+      ],
+      "id": "if-luxury-price",
+      "name": "If Luxury Price"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json }}",
+        "options": {
+          "systemMessage": "# Luxury Team Agent\n\nYou are a luxury real estate agent. Handle all leads with priceRange > $2M. Provide white-glove service and coordinate with the main workflow.\n\n## Output JSON\n{ qualified: boolean, agent: string, action: string, summary: string, note: string }\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        800,
+        150
+      ],
+      "id": "luxury-agent-node-1",
+      "name": "Luxury Team Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.approvalRequired}}",
+              "operation": "is true"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        50
+      ],
+      "id": "if-human-loop",
+      "name": "If Human-in-the-Loop"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json }}",
+        "options": {
+          "systemMessage": "# Human-in-the-Loop Agent\n\nYou are a human-in-the-loop agent. Facilitate approvals and feedback for high-value or sensitive leads.\n\n## Output JSON\n{ approved: boolean, feedback: string }\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        800,
+        50
+      ],
+      "id": "human-loop-agent-node-1",
+      "name": "Human-in-the-Loop Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.agent}}",
+              "operation": "equals",
+              "value2": "General Pool"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        550
+      ],
+      "id": "if-general-pool",
+      "name": "If General Pool"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json }}",
+        "options": {
+          "systemMessage": "# General Pool Agent\n\nYou are the general pool agent. Handle leads that do not match any specific agent. Flag for review and provide next steps.\n\n## Output JSON\n{ flagged: boolean, nextSteps: string }\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        800,
+        550
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "General Pool Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.language}}",
+              "operation": "not equal",
+              "value2": "English"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        -50
+      ],
+      "id": "if-language-specialist",
+      "name": "If Language Specialist"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json }}",
+        "options": {
+          "systemMessage": "# Language Specialist Agent\n\nYou are a language specialist agent. Handle all non-English leads, provide translation, and assign to the appropriate multilingual agent.\n\n## Output JSON\n{ assignedAgent: string, translationNote: string }\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        800,
+        -50
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Language Specialist Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.campaignSource}}",
+              "operation": "equals",
+              "value2": "Referral"
+            }
+          ],
+          "number": [
+            {
+              "value1": "={{$json.score}}",
+              "operation": ">=",
+              "value2": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        -150
+      ],
+      "id": "if-referral-vip",
+      "name": "If Referral VIP"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json }}",
+        "options": {
+          "systemMessage": "# Referral VIP Agent\n\nYou are a referral VIP agent. Handle high-value referral leads with extra care and priority.\n\n## Output JSON\n{ assignedAgent: string, vipNote: string }\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        800,
+        -150
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Referral VIP Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.propertyType}}",
+              "operation": "equals",
+              "value2": "Commercial"
+            }
+          ],
+          "boolean": [
+            {
+              "value1": "={{$json.complianceFlag}}",
+              "operation": "is true"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        650
+      ],
+      "id": "if-commercial-compliance",
+      "name": "If Commercial Compliance"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json }}",
+        "options": {
+          "systemMessage": "# Commercial Compliance Agent\n\nYou are a commercial compliance agent. Review all commercial leads flagged for compliance and provide regulatory guidance.\n\n## Output JSON\n{ compliancePassed: boolean, issues: string, recommendedActions: string }\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        800,
+        650
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Commercial Compliance Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.propertyType}}",
+              "operation": "equals",
+              "value2": "Residential"
+            }
+          ],
+          "boolean": [
+            {
+              "value1": "={{$json.firstTimeBuyer}}",
+              "operation": "is true"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        -250
+      ],
+      "id": "if-first-time-buyer",
+      "name": "If First-Time Buyer"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json }}",
+        "options": {
+          "systemMessage": "# First-Time Buyer Agent\n\nYou are a first-time buyer specialist. Guide residential leads who are first-time buyers through the process with extra support.\n\n## Output JSON\n{ assignedAgent: string, supportNote: string }\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        800,
+        -250
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "First-Time Buyer Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.clientType}}",
+              "operation": "equals",
+              "value2": "Investor"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        -350
+      ],
+      "id": "if-investor-relations",
+      "name": "If Investor Relations"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json }}",
+        "options": {
+          "systemMessage": "# Investor Relations Agent\n\nYou are an investor relations specialist. Handle all investor leads, provide portfolio options, and coordinate with the main workflow.\n\n## Output JSON\n{ assignedAgent: string, investorNote: string }\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        800,
+        -350
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Investor Relations Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.urgency}}",
+              "operation": "equals",
+              "value2": "Critical"
+            }
+          ],
+          "number": [
+            {
+              "value1": "={{$json.score}}",
+              "operation": ">=",
+              "value2": 10
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        -450
+      ],
+      "id": "if-urgent-escalation",
+      "name": "If Urgent Escalation"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json }}",
+        "options": {
+          "systemMessage": "# Urgent Escalation Agent\n\nYou are an urgent escalation agent. Handle all critical or top-score leads with immediate attention and notify management.\n\n## Output JSON\n{ assignedAgent: string, escalationNote: string }\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        800,
+        -450
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Urgent Escalation Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.relocation}}",
+              "operation": "is true"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        -550
+      ],
+      "id": "if-relocation-specialist",
+      "name": "If Relocation Specialist"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json }}",
+        "options": {
+          "systemMessage": "# Relocation Specialist Agent\n\nYou are a relocation specialist. Handle all leads flagged for relocation, provide area guidance, and coordinate logistics.\n\n## Output JSON\n{ assignedAgent: string, relocationNote: string }\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        800,
+        -550
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Relocation Specialist Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.propertyType}}",
+              "operation": "equals",
+              "value2": "Estate"
+            },
+            {
+              "value1": "={{$json.campaignSource}}",
+              "operation": "equals",
+              "value2": "Probate"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        -650
+      ],
+      "id": "if-probate-estate",
+      "name": "If Probate/Estate"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json }}",
+        "options": {
+          "systemMessage": "# Probate/Estate Agent\n\nYou are a probate/estate specialist. Handle all estate or probate leads with sensitivity and legal expertise.\n\n## Output JSON\n{ assignedAgent: string, probateNote: string }\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        800,
+        -650
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Probate/Estate Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.clientType}}",
+              "operation": "equals",
+              "value2": "Corporate"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        -750
+      ],
+      "id": "if-corporate-client",
+      "name": "If Corporate Client"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json }}",
+        "options": {
+          "systemMessage": "# Corporate Client Agent\n\nYou are a corporate client specialist. Handle all corporate leads, provide commercial solutions, and coordinate with the main workflow.\n\n## Output JSON\n{ assignedAgent: string, corporateNote: string }\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        800,
+        -750
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Corporate Client Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.campaignSource}}",
+              "operation": "in",
+              "value2": "Facebook,Instagram,LinkedIn,TikTok,Twitter"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        -850
+      ],
+      "id": "if-social-media-lead",
+      "name": "If Social Media Lead"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json }}",
+        "options": {
+          "systemMessage": "# Social Media Lead Agent\n\nYou are a social media lead specialist. Handle all leads from social media sources, provide rapid response, and track engagement.\n\n## Output JSON\n{ assignedAgent: string, socialNote: string }\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        800,
+        -850
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Social Media Lead Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.relocation}}",
+              "operation": "is true"
+            }
+          ],
+          "number": [
+            {
+              "value1": "={{$json.priceRange}}",
+              "operation": ">",
+              "value2": 2000000
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        -1050
+      ],
+      "id": "if-luxury-relocation",
+      "name": "If Luxury Relocation"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json }}",
+        "options": {
+          "systemMessage": "# Luxury Relocation Agent\n\nYou are a luxury relocation specialist. Handle all VIP relocation leads, coordinate international logistics, and provide white-glove service.\n\n## Output JSON\n{ assignedAgent: string, relocationNote: string, vipNote: string }\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        800,
+        -1050
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Luxury Relocation Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.country}}",
+              "operation": "not equal",
+              "value2": "USA"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        -1150
+      ],
+      "id": "if-international-buyer",
+      "name": "If International Buyer"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json }}",
+        "options": {
+          "systemMessage": "# International Buyer Agent\n\nYou are an international buyer specialist. Handle all non-USA leads, manage compliance, currency, and language issues.\n\n## Output JSON\n{ assignedAgent: string, intlNote: string }\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        800,
+        -1150
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "International Buyer Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.campaignSource}}",
+              "operation": "equals",
+              "value2": "Expired Listing"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        -1250
+      ],
+      "id": "if-expired-listing",
+      "name": "If Expired Listing"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json }}",
+        "options": {
+          "systemMessage": "# Expired Listing Agent\n\nYou are an expired listing specialist. Handle all expired listing leads, re-engage and convert them.\n\n## Output JSON\n{ assignedAgent: string, expiredNote: string }\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        800,
+        -1250
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Expired Listing Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.propertyCondition}}",
+              "operation": "equals",
+              "value2": "Distressed"
+            },
+            {
+              "value1": "={{$json.campaignSource}}",
+              "operation": "equals",
+              "value2": "Foreclosure"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        -1350
+      ],
+      "id": "if-distressed-property",
+      "name": "If Distressed Property"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json }}",
+        "options": {
+          "systemMessage": "# Distressed Property Agent\n\nYou are a distressed property specialist. Handle all distressed or foreclosure leads, manage short sales, auctions, and investor outreach.\n\n## Output JSON\n{ assignedAgent: string, distressedNote: string }\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        800,
+        -1350
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Distressed Property Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.propertyType}}",
+              "operation": "equals",
+              "value2": "Senior Living"
+            },
+            {
+              "value1": "={{$json.clientType}}",
+              "operation": "equals",
+              "value2": "Senior"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        -1450
+      ],
+      "id": "if-senior-living",
+      "name": "If Senior Living"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json }}",
+        "options": {
+          "systemMessage": "# Senior Living Specialist Agent\n\nYou are a senior living specialist. Handle all senior living or senior client leads, provide transition support.\n\n## Output JSON\n{ assignedAgent: string, seniorNote: string }\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        800,
+        -1450
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Senior Living Specialist Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.propertyUse}}",
+              "operation": "in",
+              "value2": "Vacation,Second Home"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        -1550
+      ],
+      "id": "if-vacation-home",
+      "name": "If Vacation/Second Home"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json }}",
+        "options": {
+          "systemMessage": "# Vacation/Second Home Agent\n\nYou are a vacation/second home specialist. Handle all vacation or second home leads, manage remote closings and rental potential.\n\n## Output JSON\n{ assignedAgent: string, vacationNote: string }\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        800,
+        -1550
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Vacation/Second Home Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json }}",
+        "options": {
+          "systemMessage": "# Default Generalist Agent\n\nYou are the default generalist agent. Handle all leads that do not match any specialized criteria. Provide triage and next steps.\n\n## Output JSON\n{ assignedAgent: string, generalNote: string }\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        800,
+        -1650
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Default Generalist Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.ecoPreference}}",
+              "operation": "is true"
+            }
+          ],
+          "string": [
+            {
+              "value1": "={{$json.campaignSource}}",
+              "operation": "equals",
+              "value2": "Green Initiative"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        -1650
+      ],
+      "id": "if-green-eco-agent",
+      "name": "If Green/Eco-Friendly"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json }}",
+        "options": {
+          "systemMessage": "# Green/Eco-Friendly Agent\n\nYou are a green/eco-friendly specialist. Handle all leads with eco preferences or from green initiatives.\n\n## Output JSON\n{ assignedAgent: string, ecoNote: string }\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        800,
+        -1650
+      ],
+      "id": "green-eco-agent-node-1",
+      "name": "Green/Eco-Friendly Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.propertyType}}",
+              "operation": "equals",
+              "value2": "Multi-Family"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        -1750
+      ],
+      "id": "if-multifamily-agent",
+      "name": "If Multi-Family"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json }}",
+        "options": {
+          "systemMessage": "# Multi-Family Specialist Agent\n\nYou are a multi-family property specialist. Handle all multi-family leads, provide investment analysis and management options.\n\n## Output JSON\n{ assignedAgent: string, multiFamilyNote: string }\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        800,
+        -1750
+      ],
+      "id": "multifamily-agent-node-1",
+      "name": "Multi-Family Specialist Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.propertyType}}",
+              "operation": "equals",
+              "value2": "New Construction"
+            },
+            {
+              "value1": "={{$json.campaignSource}}",
+              "operation": "equals",
+              "value2": "Builder"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        -1850
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "If New Construction"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json }}",
+        "options": {
+          "systemMessage": "# New Construction Agent\n\nYou are a new construction specialist. Handle all new construction or builder leads, coordinate with developers and buyers.\n\n## Output JSON\n{ assignedAgent: string, newConstructionNote: string }\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        800,
+        -1850
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "New Construction Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.propertyType}}",
+              "operation": "in",
+              "value2": "Land,Farm,Ranch"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        -1950
+      ],
+      "id": "if-land-farm-agent",
+      "name": "If Land/Farm/Ranch"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json }}",
+        "options": {
+          "systemMessage": "# Land/Farm Agent\n\nYou are a land/farm/ranch specialist. Handle all land, farm, or ranch leads, provide zoning and agricultural expertise.\n\n## Output JSON\n{ assignedAgent: string, landNote: string }\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        800,
+        -1950
+      ],
+      "id": "land-farm-agent-node-1",
+      "name": "Land/Farm Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.propertyUse}}",
+              "operation": "equals",
+              "value2": "Short-Term Rental"
+            },
+            {
+              "value1": "={{$json.campaignSource}}",
+              "operation": "equals",
+              "value2": "Airbnb"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        -2050
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "If Short-Term Rental"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json }}",
+        "options": {
+          "systemMessage": "# Short-Term Rental Agent\n\nYou are a short-term rental specialist. Handle all short-term rental or Airbnb leads, provide rental analysis and management.\n\n## Output JSON\n{ assignedAgent: string, shortTermNote: string }\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        800,
+        -2050
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Short-Term Rental Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.propertyFeature}}",
+              "operation": "equals",
+              "value2": "Waterfront"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        -2150
+      ],
+      "id": "if-waterfront-agent",
+      "name": "If Waterfront Property"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json }}",
+        "options": {
+          "systemMessage": "# Waterfront Property Agent\n\nYou are a waterfront property specialist. Handle all waterfront leads, provide expertise on regulations, insurance, and amenities.\n\n## Output JSON\n{ assignedAgent: string, waterfrontNote: string }\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        800,
+        -2150
+      ],
+      "id": "waterfront-agent-node-1",
+      "name": "Waterfront Property Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.propertyFeature}}",
+              "operation": "equals",
+              "value2": "Historic"
+            },
+            {
+              "value1": "={{$json.campaignSource}}",
+              "operation": "equals",
+              "value2": "Historic Registry"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        -2250
+      ],
+      "id": "if-historic-home-agent",
+      "name": "If Historic Home"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json }}",
+        "options": {
+          "systemMessage": "# Historic Home Agent\n\nYou are a historic home specialist. Handle all historic or registry leads, provide restoration and preservation guidance.\n\n## Output JSON\n{ assignedAgent: string, historicNote: string }\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        800,
+        -2250
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Historic Home Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.propertyType}}",
+              "operation": "equals",
+              "value2": "Tiny Home"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        -2350
+      ],
+      "id": "if-tiny-home-agent",
+      "name": "If Tiny Home"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json }}",
+        "options": {
+          "systemMessage": "# Tiny Home Agent\n\nYou are a tiny home specialist. Handle all tiny home leads, provide zoning, financing, and lifestyle guidance.\n\n## Output JSON\n{ assignedAgent: string, tinyHomeNote: string }\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        800,
+        -2350
+      ],
+      "id": "tiny-home-agent-node-1",
+      "name": "Tiny Home Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.propertyType}}",
+              "operation": "in",
+              "value2": "Modular,Prefab"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        -2450
+      ],
+      "id": "if-modular-prefab-agent",
+      "name": "If Modular/Prefab"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json }}",
+        "options": {
+          "systemMessage": "# Modular/Prefab Agent\n\nYou are a modular/prefab specialist. Handle all modular or prefab leads, provide construction and financing guidance.\n\n## Output JSON\n{ assignedAgent: string, modularNote: string }\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        800,
+        -2450
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Modular/Prefab Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.propertyFeature}}",
+              "operation": "equals",
+              "value2": "Mountain View"
+            },
+            {
+              "value1": "={{$json.locationRegion}}",
+              "operation": "equals",
+              "value2": "Mountain"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        -2550
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "If Mountain Property"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json }}",
+        "options": {
+          "systemMessage": "# Mountain Property Agent\n\nYou are a mountain property specialist. Handle all mountain view or mountain region leads, provide expertise on terrain, access, and amenities.\n\n## Output JSON\n{ assignedAgent: string, mountainNote: string }\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        800,
+        -2550
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Mountain Property Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.propertyFeature}}",
+              "operation": "equals",
+              "value2": "Golf Course"
+            },
+            {
+              "value1": "={{$json.campaignSource}}",
+              "operation": "equals",
+              "value2": "Golf Community"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        -2650
+      ],
+      "id": "if-golf-community-agent",
+      "name": "If Golf Community"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json }}",
+        "options": {
+          "systemMessage": "# Golf Community Agent\n\nYou are a golf community specialist. Handle all golf course or golf community leads, provide amenities and membership guidance.\n\n## Output JSON\n{ assignedAgent: string, golfNote: string }\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        800,
+        -2650
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Golf Community Agent",
+      "onError": "continueErrorOutput"
+    }
+  ],
+  "connections": {
+    "GoHighLevel Trigger": {
+      "main": [
+        [
+          {
+            "node": "HighLevel - Get Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HighLevel - Get Lead": {
+      "main": [
+        [
+          {
+            "node": "ai-agent-node-1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets - Log Error",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack - Notify Admins",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Retry/Escalation (Placeholder)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cron - Weekly Report": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets - Write Weekly Report",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "BI/Dashboard Integration (Placeholder)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HighLevel - Update Lead & Create Task": {
+      "main": [
+        [
+          {
+            "node": "Human-in-the-Loop (Placeholder)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "llm-node-1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "ai-agent-node-1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ai-agent-node-1": {
+      "main": [
+        [
+          {
+            "node": "if-waterfront-agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-waterfront-agent": {
+      "main": [
+        [
+          {
+            "node": "waterfront-agent-node-1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "if-historic-home-agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "waterfront-agent-node-1": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets - Log Lead",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Gmail - Send Welcome Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Slack - Notify Team",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Google Calendar - Schedule Call/Showing",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HighLevel - Update Lead & Create Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-historic-home-agent": {
+      "main": [
+        [
+          {
+            "node": "{{ RESOURCE_ID }}",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "if-tiny-home-agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "historic-home-agent-node-1": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets - Log Lead",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Gmail - Send Welcome Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Slack - Notify Team",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Google Calendar - Schedule Call/Showing",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HighLevel - Update Lead & Create Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-tiny-home-agent": {
+      "main": [
+        [
+          {
+            "node": "tiny-home-agent-node-1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "if-modular-prefab-agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "tiny-home-agent-node-1": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets - Log Lead",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Gmail - Send Welcome Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Slack - Notify Team",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Google Calendar - Schedule Call/Showing",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HighLevel - Update Lead & Create Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-modular-prefab-agent": {
+      "main": [
+        [
+          {
+            "node": "{{ RESOURCE_ID }}",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "{{ RESOURCE_ID }}",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "modular-prefab-agent-node-1": {
+      "main": [
+        [
+          {
+            "node": "{{ RESOURCE_ID }}",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-mountain-property-agent": {
+      "main": [
+        [
+          {
+            "node": "{{ RESOURCE_ID }}",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "if-golf-community-agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "mountain-property-agent-node-1": {
+      "main": [
+        [
+          {
+            "node": "if-golf-community-agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-golf-community-agent": {
+      "main": [
+        [
+          {
+            "node": "{{ RESOURCE_ID }}",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "if-green-eco-agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "golf-community-agent-node-1": {
+      "main": [
+        [
+          {
+            "node": "if-green-eco-agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-green-eco-agent": {
+      "main": [
+        [
+          {
+            "node": "green-eco-agent-node-1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "if-multifamily-agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "green-eco-agent-node-1": {
+      "main": [
+        [
+          {
+            "node": "if-multifamily-agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-multifamily-agent": {
+      "main": [
+        [
+          {
+            "node": "multifamily-agent-node-1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "{{ RESOURCE_ID }}",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "multifamily-agent-node-1": {
+      "main": [
+        [
+          {
+            "node": "{{ RESOURCE_ID }}",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-new-construction-agent": {
+      "main": [
+        [
+          {
+            "node": "{{ RESOURCE_ID }}",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "if-land-farm-agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "new-construction-agent-node-1": {
+      "main": [
+        [
+          {
+            "node": "if-land-farm-agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-land-farm-agent": {
+      "main": [
+        [
+          {
+            "node": "land-farm-agent-node-1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "{{ RESOURCE_ID }}",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "land-farm-agent-node-1": {
+      "main": [
+        [
+          {
+            "node": "{{ RESOURCE_ID }}",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-short-term-rental-agent": {
+      "main": [
+        [
+          {
+            "node": "{{ RESOURCE_ID }}",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "if-luxury-relocation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "short-term-rental-agent-node-1": {
+      "main": [
+        [
+          {
+            "node": "if-luxury-relocation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-luxury-relocation": {
+      "main": [
+        [
+          {
+            "node": "{{ RESOURCE_ID }}",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "if-international-buyer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "luxury-relocation-agent-node-1": {
+      "main": [
+        [
+          {
+            "node": "if-international-buyer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-international-buyer": {
+      "main": [
+        [
+          {
+            "node": "{{ RESOURCE_ID }}",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "if-expired-listing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "international-buyer-agent-node-1": {
+      "main": [
+        [
+          {
+            "node": "if-expired-listing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-expired-listing": {
+      "main": [
+        [
+          {
+            "node": "{{ RESOURCE_ID }}",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "if-distressed-property",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "expired-listing-agent-node-1": {
+      "main": [
+        [
+          {
+            "node": "if-distressed-property",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-distressed-property": {
+      "main": [
+        [
+          {
+            "node": "{{ RESOURCE_ID }}",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "if-senior-living",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "distressed-property-agent-node-1": {
+      "main": [
+        [
+          {
+            "node": "if-senior-living",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-senior-living": {
+      "main": [
+        [
+          {
+            "node": "{{ RESOURCE_ID }}",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "if-vacation-home",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "senior-living-agent-node-1": {
+      "main": [
+        [
+          {
+            "node": "if-vacation-home",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-vacation-home": {
+      "main": [
+        [
+          {
+            "node": "{{ RESOURCE_ID }}",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "if-social-media-lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "vacation-home-agent-node-1": {
+      "main": [
+        [
+          {
+            "node": "if-social-media-lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-social-media-lead": {
+      "main": [
+        [
+          {
+            "node": "{{ RESOURCE_ID }}",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "if-corporate-client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "social-media-lead-agent-node-1": {
+      "main": [
+        [
+          {
+            "node": "if-corporate-client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-corporate-client": {
+      "main": [
+        [
+          {
+            "node": "{{ RESOURCE_ID }}",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "if-probate-estate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "corporate-client-agent-node-1": {
+      "main": [
+        [
+          {
+            "node": "if-probate-estate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-probate-estate": {
+      "main": [
+        [
+          {
+            "node": "{{ RESOURCE_ID }}",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "if-relocation-specialist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "probate-estate-agent-node-1": {
+      "main": [
+        [
+          {
+            "node": "if-relocation-specialist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-relocation-specialist": {
+      "main": [
+        [
+          {
+            "node": "{{ RESOURCE_ID }}",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "if-urgent-escalation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "relocation-specialist-agent-node-1": {
+      "main": [
+        [
+          {
+            "node": "if-urgent-escalation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-urgent-escalation": {
+      "main": [
+        [
+          {
+            "node": "{{ RESOURCE_ID }}",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "if-investor-relations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "urgent-escalation-agent-node-1": {
+      "main": [
+        [
+          {
+            "node": "if-investor-relations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-investor-relations": {
+      "main": [
+        [
+          {
+            "node": "{{ RESOURCE_ID }}",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "if-first-time-buyer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "investor-relations-agent-node-1": {
+      "main": [
+        [
+          {
+            "node": "if-first-time-buyer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-first-time-buyer": {
+      "main": [
+        [
+          {
+            "node": "{{ RESOURCE_ID }}",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "if-referral-vip",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "first-time-buyer-agent-node-1": {
+      "main": [
+        [
+          {
+            "node": "if-referral-vip",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-referral-vip": {
+      "main": [
+        [
+          {
+            "node": "{{ RESOURCE_ID }}",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "if-language-specialist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "referral-vip-agent-node-1": {
+      "main": [
+        [
+          {
+            "node": "if-language-specialist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-language-specialist": {
+      "main": [
+        [
+          {
+            "node": "{{ RESOURCE_ID }}",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "if-human-loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "language-specialist-agent-node-1": {
+      "main": [
+        [
+          {
+            "node": "if-human-loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-human-loop": {
+      "main": [
+        [
+          {
+            "node": "human-loop-agent-node-1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "if-luxury-team",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "human-loop-agent-node-1": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets - Log Lead",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Gmail - Send Welcome Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Slack - Notify Team",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Google Calendar - Schedule Call/Showing",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HighLevel - Update Lead & Create Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-luxury-team": {
+      "main": [
+        [
+          {
+            "node": "luxury-agent-node-1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "if-compliance-flag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "luxury-agent-node-1": {
+      "main": [
+        [
+          {
+            "node": "if-compliance-flag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-compliance-flag": {
+      "main": [
+        [
+          {
+            "node": "if-commercial-compliance",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "if-followup-needed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "compliance-agent-node-1": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets - Log Lead",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Gmail - Send Welcome Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Slack - Notify Team",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Google Calendar - Schedule Call/Showing",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HighLevel - Update Lead & Create Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-followup-needed": {
+      "main": [
+        [
+          {
+            "node": "followup-agent-node-1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "if-analytics-needed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "followup-agent-node-1": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets - Log Lead",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Gmail - Send Welcome Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Slack - Notify Team",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Google Calendar - Schedule Call/Showing",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HighLevel - Update Lead & Create Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-analytics-needed": {
+      "main": [
+        [
+          {
+            "node": "analytics-agent-node-1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "if-general-pool",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "analytics-agent-node-1": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets - Log Lead",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Gmail - Send Welcome Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Slack - Notify Team",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Google Calendar - Schedule Call/Showing",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HighLevel - Update Lead & Create Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-general-pool": {
+      "main": [
+        [
+          {
+            "node": "{{ RESOURCE_ID }}",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "{{ RESOURCE_ID }}",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "general-pool-agent-node-1": {
+      "main": [
+        [
+          {
+            "node": "{{ RESOURCE_ID }}",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if-commercial-compliance": {
+      "main": [
+        [
+          {
+            "node": "{{ RESOURCE_ID }}",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "compliance-agent-node-1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "commercial-compliance-agent-node-1": {
+      "main": [
+        [
+          {
+            "node": "compliance-agent-node-1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "default-generalist-agent-node-1": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets - Log Lead",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Gmail - Send Welcome Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Slack - Notify Team",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Google Calendar - Schedule Call/Showing",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HighLevel - Update Lead & Create Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "id": "82fa3f22-88a9-47c6-b222-9735cf84a054"
+}

@@ -1,0 +1,498 @@
+{
+  "name": "Order Analytics Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}",
+        "options": {
+          "systemMessage": "# Overview\nYou are the RetroFuture Gadgetry Order Analytics Agent, providing comprehensive analytics and insights for custom orders, production efficiency, and business metrics. You transform workshop data into actionable insights that drive creative and operational decisions.\n\n## Tools Available\n\n### Google BigQuery\n- Order performance data\n- Production analytics\n- Customer behavior metrics\n- Custom SQL queries\n\n### Looker Dashboards\n- Real-time visualizations\n- Production dashboards\n- Sales reports\n- Custom analytics\n\n### Analytics API\n- Order data access\n- Metrics aggregation\n- Efficiency calculations\n- Trend analysis\n\n### Google Sheets Reports\n- Custom reports\n- Data exports\n- Production summaries\n- Profit calculations\n\n### Tableau Visualizations\n- Advanced data viz\n- Interactive dashboards\n- Sales trends\n- Predictive analytics\n\n### Slack Alerts\n- Performance notifications\n- Production milestones\n- Goal achievements\n- Weekly summaries\n\n## Key Metrics\n\n### Production Metrics\n- **Efficiency Metrics**\n  - Average production time\n  - Artisan utilization rate\n  - Stage completion times\n  - Quality pass rate\n- **Order Metrics**\n  - Orders in pipeline\n  - Customization complexity\n  - Rush order percentage\n  - On-time delivery rate\n- **Material Metrics**\n  - Component usage rates\n  - Waste percentage\n  - Material cost trends\n\n### Sales Metrics\n- **Revenue Performance**\n  - Average order value\n  - Customization upsell rate\n  - Product category mix\n  - Seasonal trends\n- **Customer Metrics**\n  - Repeat customer rate\n  - Customer lifetime value\n  - Geographic distribution\n  - Satisfaction scores\n- **Design Performance**\n  - Popular customizations\n  - Design category trends\n  - Limited edition sellout times\n\n### Business Metrics\n- **Financial Health**\n  - Gross margins by product\n  - Labor cost analysis\n  - Material cost trends\n  - Profitability by category\n- **Operational Efficiency**\n  - Workshop capacity utilization\n  - Lead time accuracy\n  - Inventory turnover\n- **Growth Indicators**\n  - New customer acquisition\n  - Market expansion\n  - Product line performance\n\n## Analytics Standards\n- Data freshness: Daily updates\n- Accuracy threshold: 99%\n- Reporting cadence: Daily/Weekly/Monthly\n- Data retention: 3 years\n\n## Report Types\n1. Executive Dashboards\n2. Production Efficiency Reports\n3. Sales Analytics\n4. Customer Insights\n5. Inventory Analysis\n\nCurrent Date/Time: {{ $now }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        160,
+        -220
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Order Analytics Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.2,
+      "position": [
+        -460,
+        140
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Anthropic Chat Model"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Access RetroFuture Analytics API",
+        "method": "POST",
+        "url": "https://api.retrofuturegadgetry.com/v2/analytics/query",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {}
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"metrics\": {metrics},\n  \"dimensions\": {dimensions},\n  \"filters\": {filters},\n  \"dateRange\": {\n    \"start\": \"{startDate}\",\n    \"end\": \"{endDate}\"\n  },\n  \"granularity\": \"{granularity}\",\n  \"timezone\": \"{timezone}\"\n}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "metrics",
+              "description": "Metrics to retrieve",
+              "type": "json"
+            },
+            {
+              "name": "dimensions",
+              "description": "Dimensions for grouping",
+              "type": "json"
+            },
+            {
+              "name": "filters",
+              "description": "Data filters",
+              "type": "json"
+            },
+            {
+              "name": "startDate",
+              "description": "Start date for analysis",
+              "type": "string"
+            },
+            {
+              "name": "endDate",
+              "description": "End date for analysis",
+              "type": "string"
+            },
+            {
+              "name": "granularity",
+              "description": "Data granularity (hour/day/week/month)",
+              "type": "string"
+            },
+            {
+              "name": "timezone",
+              "description": "Timezone for data",
+              "type": "string"
+            },
+            {
+              "name": "apiKey",
+              "description": "RetroFuture API Key",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        -300,
+        160
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Analytics API"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Generate Looker dashboard or report",
+        "method": "POST",
+        "url": "https://retrofuture.looker.com/api/4.0/dashboards/{dashboardId}/render/{format}",
+        "sendQuery": true,
+        "parametersQuery": {
+          "values": [
+            {}
+          ]
+        },
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {}
+          ]
+        },
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "dashboardId",
+              "description": "Looker dashboard ID",
+              "type": "string"
+            },
+            {
+              "name": "format",
+              "description": "Output format (pdf/png/csv)",
+              "type": "string"
+            },
+            {
+              "name": "filters",
+              "description": "Dashboard filters",
+              "type": "string"
+            },
+            {
+              "name": "limit",
+              "description": "Result limit",
+              "type": "string"
+            },
+            {
+              "name": "lookerToken",
+              "description": "Looker API token",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        -120,
+        180
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Looker Dashboard"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.4,
+      "position": [
+        60,
+        180
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Read Order Data"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.4,
+      "position": [
+        220,
+        180
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Create Custom Report"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1,
+      "position": [
+        380,
+        180
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Calculate Metrics"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1,
+      "position": [
+        580,
+        180
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Create Visualization"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $fromAI(\"recipientEmails\") }}",
+        "subject": "RetroFuture Analytics Report - {{ $fromAI(\"reportPeriod\") }}",
+        "message": "={{ $fromAI(\"emailContent\") }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        760,
+        180
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Send Analytics Report",
+      "webhookId": "{{ WEBHOOK_ID }}"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Export data to Tableau",
+        "method": "POST",
+        "url": "https://retrofuture.tableau.com/api/3.14/sites/{siteId}/datasources",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {}
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"datasource\": {\n    \"name\": \"{datasourceName}\",\n    \"connectionCredentials\": {\n      \"name\": \"{connectionName}\",\n      \"password\": \"{password}\",\n      \"embed\": true\n    },\n    \"project\": {\n      \"id\": \"{projectId}\"\n    }\n  }\n}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "siteId",
+              "description": "Tableau site ID",
+              "type": "string"
+            },
+            {
+              "name": "datasourceName",
+              "description": "Name for the datasource",
+              "type": "string"
+            },
+            {
+              "name": "connectionName",
+              "description": "Connection name",
+              "type": "string"
+            },
+            {
+              "name": "password",
+              "description": "Connection password",
+              "type": "string"
+            },
+            {
+              "name": "projectId",
+              "description": "Tableau project ID",
+              "type": "string"
+            },
+            {
+              "name": "tableauToken",
+              "description": "Tableau auth token",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        940,
+        180
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Export to Tableau"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "response-id",
+              "name": "response",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        920,
+        -320
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Response"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "error-response-id",
+              "name": "response",
+              "value": "Unable to process analytics request. Please try again.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        920,
+        -120
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Try Again"
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -460,
+        -220
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "When Executed by Another Workflow"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Order Analytics Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Order Analytics Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analytics API": {
+      "ai_tool": [
+        [
+          {
+            "node": "Order Analytics Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Looker Dashboard": {
+      "ai_tool": [
+        [
+          {
+            "node": "Order Analytics Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Order Data": {
+      "ai_tool": [
+        [
+          {
+            "node": "Order Analytics Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Custom Report": {
+      "ai_tool": [
+        [
+          {
+            "node": "Order Analytics Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Metrics": {
+      "ai_tool": [
+        [
+          {
+            "node": "Order Analytics Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Visualization": {
+      "ai_tool": [
+        [
+          {
+            "node": "Order Analytics Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Analytics Report": {
+      "ai_tool": [
+        [
+          {
+            "node": "Order Analytics Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Export to Tableau": {
+      "ai_tool": [
+        [
+          {
+            "node": "Order Analytics Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Order Analytics Agent": {
+      "main": [
+        [
+          {
+            "node": "Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Try Again",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "{{ VERSION_ID }}",
+  "meta": {
+    "instanceId": "{{ INSTANCE_ID }}"
+  },
+  "id": "b682ca75-48d5-4605-8f04-1d70324093b6",
+  "tags": []
+}

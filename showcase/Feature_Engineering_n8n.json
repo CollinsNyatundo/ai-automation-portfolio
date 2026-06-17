@@ -1,0 +1,177 @@
+{
+  "name": "LLM for KDN",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        0
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "When clicking \u2018Execute workflow\u2019"
+    },
+    {
+      "parameters": {
+        "url": "https://raw.githubusercontent.com/kirenz/datasets/master/height.csv",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -192,
+        0
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Feature Engineering Data Analysis Node\n// This code analyzes CSV data and prepares context for LLM\n\nconst csvData = $input.all()[0].json.data;\n\n// Helper function to detect column types\nfunction analyzeColumn(values) {\n  const nonEmpty = values.filter(v => v !== null && v !== undefined && v !== '');\n  \n  if (nonEmpty.length === 0) return { type: 'empty', stats: {} };\n  \n  // Try to convert to numbers\n  const numbers = nonEmpty.map(v => {\n    const num = parseFloat(v);\n    return isNaN(num) ? null : num;\n  }).filter(n => n !== null);\n  \n  if (numbers.length / nonEmpty.length > 0.8) {\n    // Mostly numeric\n    numbers.sort((a, b) => a - b);\n    return {\n      type: 'numeric',\n      stats: {\n        count: numbers.length,\n        min: numbers[0],\n        max: numbers[numbers.length - 1],\n        mean: numbers.reduce((a, b) => a + b) / numbers.length,\n        median: numbers[Math.floor(numbers.length / 2)],\n        missing: values.length - nonEmpty.length,\n        unique_values: new Set(numbers).size\n      }\n    };\n  } else {\n    // Categorical/text\n    const uniqueValues = new Set(nonEmpty);\n    return {\n      type: 'categorical',\n      stats: {\n        count: nonEmpty.length,\n        unique_values: uniqueValues.size,\n        missing: values.length - nonEmpty.length,\n        most_common: [...uniqueValues].slice(0, 5),\n        cardinality: uniqueValues.size / nonEmpty.length\n      }\n    };\n  }\n}\n\n// Helper function to detect potential datetime columns\nfunction isDateColumn(columnName, values) {\n  const dateWords = ['date', 'time', 'created', 'updated', 'year', 'month', 'day'];\n  const nameHasDate = dateWords.some(word => columnName.toLowerCase().includes(word));\n  \n  if (nameHasDate) return true;\n  \n  // Check if values look like dates\n  const sample = values.filter(v => v).slice(0, 10);\n  const datePattern = /\\d{4}-\\d{2}-\\d{2}|\\d{2}\\/\\d{2}\\/\\d{4}|\\d{4}\\/\\d{2}\\/\\d{2}/;\n  const dateMatches = sample.filter(v => datePattern.test(v)).length;\n  \n  return dateMatches / sample.length > 0.5;\n}\n\ntry {\n  // Parse CSV data\n  const lines = csvData.trim().split('\\n');\n  const headers = lines[0].split(',').map(h => h.replace(/\"/g, '').trim());\n  \n  const rows = lines.slice(1).map(line => {\n    // Simple CSV parsing - handle quoted fields\n    const values = [];\n    let current = '';\n    let inQuotes = false;\n    \n    for (let i = 0; i < line.length; i++) {\n      const char = line[i];\n      if (char === '\"') {\n        inQuotes = !inQuotes;\n      } else if (char === ',' && !inQuotes) {\n        values.push(current.trim());\n        current = '';\n      } else {\n        current += char;\n      }\n    }\n    values.push(current.trim()); // Add the last value\n    \n    return values;\n  });\n\n  // Analyze each column\n  const columnAnalysis = {};\n  const numericColumns = [];\n  const categoricalColumns = [];\n  const dateColumns = [];\n  \n  headers.forEach((header, index) => {\n    const values = rows.map(row => row[index]);\n    const analysis = analyzeColumn(values);\n    \n    columnAnalysis[header] = analysis;\n    \n    if (analysis.type === 'numeric') {\n      numericColumns.push(header);\n    } else if (analysis.type === 'categorical') {\n      categoricalColumns.push(header);\n    }\n    \n    if (isDateColumn(header, values)) {\n      dateColumns.push(header);\n    }\n  });\n\n  // Calculate potential correlations (for numeric columns)\n  const correlationCandidates = [];\n  for (let i = 0; i < numericColumns.length; i++) {\n    for (let j = i + 1; j < numericColumns.length; j++) {\n      correlationCandidates.push([numericColumns[i], numericColumns[j]]);\n    }\n  }\n\n  // Identify high-cardinality categorical columns (good for target encoding)\n  const highCardinalityColumns = categoricalColumns.filter(col => {\n    const stats = columnAnalysis[col].stats;\n    return stats.unique_values > 10 && stats.cardinality < 0.8;\n  });\n\n  // Identify potential ratio candidates\n  const ratioCandidates = [];\n  numericColumns.forEach(num1 => {\n    numericColumns.forEach(num2 => {\n      if (num1 !== num2) {\n        const col1Stats = columnAnalysis[num1].stats;\n        const col2Stats = columnAnalysis[num2].stats;\n        \n        // Suggest ratios where denominator is generally non-zero\n        if (col2Stats && col2Stats.min > 0 || (col2Stats && Math.abs(col2Stats.min) < col2Stats.max * 0.1)) {\n          ratioCandidates.push([num1, num2]);\n        }\n      }\n    });\n  });\n\n  // Prepare structured output for LLM\n  const analysisResult = {\n    dataset_summary: {\n      total_rows: rows.length,\n      total_columns: headers.length,\n      numeric_columns: numericColumns.length,\n      categorical_columns: categoricalColumns.length,\n      date_columns: dateColumns.length\n    },\n    column_details: columnAnalysis,\n    {{ RESOURCE_ID }}: {\n      numeric_columns: numericColumns,\n      categorical_columns: categoricalColumns,\n      date_columns: dateColumns,\n      {{ RESOURCE_ID }}: highCardinalityColumns,\n      correlation_candidates: correlationCandidates.slice(0, 10), // Limit to top 10\n      ratio_candidates: ratioCandidates.slice(0, 15), // Limit to top 15\n      column_names: headers\n    },\n    data_quality: {\n      columns_with_missing: Object.keys(columnAnalysis).filter(col => \n        columnAnalysis[col].stats.missing > 0\n      ),\n      total_missing_values: Object.values(columnAnalysis).reduce((sum, col) => \n        sum + (col.stats.missing || 0), 0\n      )\n    }\n  };\n\n  return [{ json: analysisResult }];\n\n} catch (error) {\n  console.error('Error analyzing data:', error);\n  return [{ \n    json: { \n      error: 'Failed to analyze data: ' + error.message,\n      raw_data_preview: csvData ? csvData.substring(0, 500) : 'No CSV data found'\n    } \n  }];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        16,
+        0
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Start analysis",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=You are an expert data scientist specializing in feature engineering strategy. When analyzing any dataset, provide conceptual feature engineering ideas that focus on:\n\n1. **Business Logic & Rationale** - Why each feature would be valuable\n2. **Data Relationships** - How to combine or transform existing columns  \n3. **Domain Insights** - Context-specific patterns relevant to the data type\n4. **Modeling Impact** - How features would improve prediction or analysis\n\n**Important Guidelines:**\n- Start directly with the analysis - no conversational phrases like \"Certainly\" or \"I'd be happy to\"\n- Focus on CONCEPTS and IDEAS, not code implementation\n- Explain the REASONING behind each suggestion\n- Make suggestions applicable to any programming language or tool\n- Prioritize features by potential business value and modeling impact\n- Adapt suggestions to the dataset's domain and structure\n\nProvide strategic feature engineering recommendations with clear business rationale. Begin immediately with the dataset analysis and recommendations."
+            },
+            {
+              "type": "{{ RESOURCE_ID }}",
+              "message": "=Dataset Analysis Summary:\n- Total Records: {{ $input.all()[0].json.dataset_summary.total_rows }}\n- Total Columns: {{ $input.all()[0].json.dataset_summary.total_columns }}\n- Numeric Columns: {{ $input.all()[0].json.{{ RESOURCE_ID }}.numeric_columns.join(', ') }}\n- Categorical Columns: {{ $input.all()[0].json.{{ RESOURCE_ID }}.categorical_columns.join(', ') }}\n- High Cardinality Categories: {{ $input.all()[0].json.{{ RESOURCE_ID }}.{{ RESOURCE_ID }}.join(', ') }}\n- Data Quality: {{ $input.all()[0].json.data_quality.total_missing_values }} missing values total\n\nBased on this dataset structure and column characteristics, provide intelligent feature engineering concepts focusing on:\n1. Business logic and strategic value for this data domain\n2. Cross-column relationships and meaningful combinations  \n3. Temporal patterns and categorical insights\n4. Domain-specific applications based on the column names and patterns\n\nFocus on concepts and reasoning rather than specific code implementation."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        224,
+        0
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        224,
+        192
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "{{ OPENAIAPI_CREDENTIAL_ID }}",
+          "name": "{{ {{ RESOURCE_ID }} }}"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "html": "<!DOCTYPE html>\n<html>\n<head>\n    <style>\n        body { \n            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; \n            max-width: 1200px; \n            margin: 0 auto; \n            padding: 20px; \n            background: #f8f9fa;\n            line-height: 1.6;\n        }\n        .container { \n            background: white; \n            padding: 40px; \n            border-radius: 12px; \n            box-shadow: 0 4px 20px rgba(0,0,0,0.1); \n        }\n        h1 { \n            color: #2c3e50; \n            border-bottom: 3px solid #3498db; \n            padding-bottom: 15px;\n            margin-bottom: 30px;\n            font-size: 2.2em;\n        }\n        h2 { \n            color: #34495e; \n            margin-top: 40px;\n            margin-bottom: 15px;\n            padding: 15px 20px; \n            background: linear-gradient(135deg, #ecf0f1 0%, #d5dbdb 100%); \n            border-left: 5px solid #3498db; \n            border-radius: 8px;\n            font-size: 1.4em;\n        }\n        h3 { \n            color: #e74c3c; \n            margin-top: 30px;\n            margin-bottom: 10px;\n            font-size: 1.2em;\n            padding-bottom: 5px;\n            border-bottom: 2px solid #ecf0f1;\n        }\n        .summary-box {\n            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n            color: white;\n            padding: 25px;\n            border-radius: 12px;\n            margin: 25px 0;\n            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);\n        }\n        .summary-box h3 {\n            color: white;\n            margin-top: 0;\n            border-bottom: none;\n        }\n        .content {\n            font-size: 16px;\n            line-height: 1.8;\n        }\n        .content p {\n            margin-bottom: 20px;\n        }\n        .feature-concept {\n            background: #f8f9fa;\n            padding: 20px;\n            margin: 15px 0;\n            border-left: 4px solid #17a2b8;\n            border-radius: 5px;\n        }\n        .rationale {\n            background: #fff3cd;\n            padding: 15px;\n            margin: 10px 0;\n            border-left: 4px solid #ffc107;\n            border-radius: 5px;\n            font-style: italic;\n        }\n        .priority-table {\n            width: 100%;\n            border-collapse: collapse;\n            margin: 20px 0;\n            background: white;\n        }\n        .priority-table th,\n        .priority-table td {\n            padding: 12px;\n            text-align: left;\n            border-bottom: 1px solid #ddd;\n        }\n        .priority-table th {\n            background: #3498db;\n            color: white;\n            font-weight: 600;\n        }\n        .priority-table tr:hover {\n            background: #f8f9fa;\n        }\n        .highlight {\n            background: #e8f4fd;\n            padding: 2px 6px;\n            border-radius: 3px;\n            color: #2980b9;\n            font-weight: 500;\n        }\n        .section-divider {\n            border: none;\n            height: 2px;\n            background: linear-gradient(90deg, #3498db, #ecf0f1);\n            margin: 40px 0;\n        }\n        .timestamp {\n            color: #6c757d;\n            font-size: 0.9em;\n            text-align: center;\n            margin-top: 40px;\n            padding-top: 20px;\n            border-top: 2px solid #ecf0f1;\n        }\n        strong {\n            color: #2c3e50;\n            font-weight: 600;\n        }\n        em {\n            color: #7f8c8d;\n            font-style: italic;\n        }\n    </style>\n</head>\n<body>\n    <div class=\"container\">\n        <h1>\ud83c\udfaf AI-Powered Feature Engineering Analysis</h1>\n        \n        <div class=\"summary-box\">\n            <h3>\u2728 Intelligent Feature Suggestions Generated</h3>\n            <p>Advanced AI analysis of your dataset structure, patterns, and domain context to provide actionable feature engineering recommendations.</p>\n        </div>\n        \n        <div class=\"content\">\n            {{ $input.all()[0].json.text.replace(/\\*\\*(.*?)\\*\\*/g, '<strong>$1</strong>').replace(/\\*(.*?)\\*/g, '<em>$1</em>').replace(/### (.*?)(\\n|$)/g, '<h3>$1</h3>').replace(/## (.*?)(\\n|$)/g, '<h2>$1</h2>').replace(/# (.*?)(\\n|$)/g, '<h2>$1</h2>').replace(/\\n\\n/g, '</p><p>').replace(/^\\s*(.)/g, '<p>$1').replace(/(.)\\s*$/g, '$1</p>').replace(/\\|([^|]+)\\|([^|]+)\\|([^|]+)\\|/g, '<tr><td>$1</td><td>$2</td><td>$3</td></tr>').replace(/<tr>/g, '<table class=\"priority-table\"><tr>').replace(/<\\/tr>(?!.*<tr>)/g, '</tr></table>') }}\n        </div>\n        \n        <div class=\"timestamp\">\n            \ud83d\udcca Generated on {{ $now.format('MMMM Do YYYY, h:mm:ss a') }} | Powered by n8n + OpenAI\n        </div>\n    </div>\n</body>\n</html>"
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        608,
+        0
+      ],
+      "id": "{{ RESOURCE_ID }}",
+      "name": "HTML"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking \u2018Execute workflow\u2019": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "{{ VERSION_ID }}",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "{{ INSTANCE_ID }}"
+  },
+  "id": "0de3a0ae-d8a2-4940-b4b8-d42e83de8d53",
+  "tags": []
+}

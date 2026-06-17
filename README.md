@@ -21,6 +21,7 @@ This repository contains **sanitized, production-ready n8n workflows** showcasin
 | **Governed Content Pipeline** | Real-time research → AI writing → AI image generation → full audit trail (Sheets) + asset storage (Drive) | `Blog_Post`, `LinkedIn_Post`, `Newsletter_Service` |
 | **Multi-LLM Orchestration** | Different models for different tasks (reasoning, writing, evaluation, optimization, embedding) | `Think_Agents`, `AI_Marketing_Team` |
 | **Scheduled AI Automation** | Cron triggers → data fetch → AI transformation → multi-channel delivery | `Analytics_Reporting`, `Social_Media_Automation`, `Newsletter_Service` |
+| **Multi-Agent Orchestration** | Master assistant routes to 7+ specialized domain agents | `Retrofuture_Master_Assistant`, `Real_Estate_Lead_Automation` |
 
 ---
 
@@ -47,7 +48,17 @@ ai-automation-portfolio/
     ├── E_commerce_Inventory.json # Inventory sync → Alerting → Reorder automation
     ├── Email_Marketing.json     # Segmented campaigns → AI personalization → SendGrid/Mailchimp
     ├── RAG_Pipeline___Chatbot.json # Document ingestion → Chat interface → Pinecone retrieval
-    └── Content_Creation_Workflow.json # End-to-end content: Research → Write → Review → Publish
+    ├── Content_Creation_Workflow.json # End-to-end content: Research → Write → Review → Publish
+    ├── Feature_Engineering_n8n.json # CSV → Code Analysis → LLM Feature Engineering Strategy
+    ├── Real_Estate_Lead_Automation.json # 10 Tools + 3 Sub-Agents: CRM, Calendar, Gmail, Slack, Sheets, DocuSign, Twilio, Notion, Zapier
+    ├── Retrofuture_Master_Assistant.json # Master orchestrator routing to 7 specialized agents
+    ├── Retrofuture_Artisan_Production.json # Production scheduling, artisan assignments, workshop ops
+    ├── Retrofuture_Customer_Experience.json # Customer support, order status, customization, returns
+    ├── Retrofuture_Custom_Orders.json # Custom order creation, personalization, design specs, pricing
+    ├── Retrofuture_Supply_Chain.json # Component availability, suppliers, inventory, sourcing
+    ├── Retrofuture_Workshop_Technical.json # Equipment, tools, techniques, safety, workshop setup
+    ├── Retrofuture_Sales_Design.json # Launches, limited editions, partnerships, wholesale
+    └── Retrofuture_Order_Analytics.json # Production metrics, sales reporting, customer analytics, dashboards
 ```
 
 ---
@@ -69,11 +80,17 @@ Replace all `{{ PLACEHOLDERS }}` in workflow nodes with your actual credential I
 ### 4. Link Tool Workflows
 For `AI_Marketing_Team.json`, update each `toolWorkflow` node's `workflowId.value` to point to the imported sub-workflow IDs.
 
+For `Retrofuture_Master_Assistant.json`, link the 7 specialized agent workflows.
+
+For `Real_Estate_Lead_Automation.json`, link the 3 sub-agent workflows.
+
 ### 5. Test
 1. Run `Data_to_Pinecone` once to ingest source documents
 2. Test `Voice_RAG_Agent` webhook with a question
 3. Send Telegram message to `AI_Marketing_Team`: "Write a blog post about AI automation"
 4. Trigger `Evaluator_Optimizer` and watch the quality loop iterate
+5. Query `Retrofuture_Master_Assistant`: "Check inventory for brass gears"
+6. Trigger `Real_Estate_Lead_Automation` via HighLevel webhook
 
 ---
 
@@ -99,6 +116,12 @@ For `AI_Marketing_Team.json`, update each `toolWorkflow` node's `workflowId.valu
 | `{{ MAILCHIMP_CREDENTIAL_ID }}` | Mailchimp | Email campaigns |
 | `{{ SENDGRID_CREDENTIAL_ID }}` | SendGrid | Transactional email |
 | `{{ FACEBOOKGRAPHAPI_CREDENTIAL_ID }}` | Meta | Instagram/Facebook posting |
+| `{{ HIGHLEVEL_API_CREDENTIAL_ID }}` | GoHighLevel | CRM (Real Estate workflow) |
+| `{{ SLACK_API_CREDENTIAL_ID }}` | Slack | Team notifications (Real Estate) |
+| `{{ TWILIO_API_CREDENTIAL_ID }}` | Twilio | SMS notifications (Real Estate) |
+| `{{ NOTION_API_CREDENTIAL_ID }}` | Notion | Knowledge base (Real Estate) |
+| `{{ DOCUSIGN_API_CREDENTIAL_ID }}` | DocuSign | E-signatures (Real Estate) |
+| `{{ ZAPIER_API_CREDENTIAL_ID }}` | Zapier | External automations (Real Estate) |
 
 ---
 
@@ -123,12 +146,13 @@ For `AI_Marketing_Team.json`, update each `toolWorkflow` node's `workflowId.valu
 ## 🏗️ Architecture
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for a complete Mermaid diagram showing:
-- Orchestrator layer (AI Marketing Team, Think Agents)
-- Modular tool workflows (Blog, LinkedIn, Image, Video)
+- Orchestrator layer (AI Marketing Team, Think Agents, Retrofuture Master, Real Estate Agent)
+- Modular tool workflows (Blog, LinkedIn, Image, Video, Retrofuture agents)
 - Evaluator-Optimizer quality loop
 - RAG pipeline (ingestion + retrieval)
 - Content automation (Blog, LinkedIn, Newsletter, Social)
 - Reporting & analytics
+- Business automation (Real Estate, Lead Gen, E-commerce, Email)
 - All external integrations
 
 ---
@@ -141,8 +165,10 @@ A 2-3 minute screen recording covering:
 3. **RAG Pipeline** — Ingest document → query via webhook → agent retrieves + answers
 4. **Governed Content** — Open Sheets log, Drive folder — every asset traced
 5. **Multi-Agent Think_Agents** — 7 tools, 4 LLMs, self-verification via Think tool
-6. **Scheduled Automation** — Daily analytics, weekly newsletter, social media
-7. **Lead Gen / E-commerce / Email** — Domain-specific automation examples
+6. **Retrofuture Master Assistant** — Query routes to correct specialized agent
+7. **Real Estate Lead Automation** — HighLevel trigger → agent qualifies → assigns → orchestrates
+8. **Scheduled Automation** — Daily analytics, weekly newsletter, social media
+9. **Lead Gen / E-commerce / Email** — Domain-specific automation examples
 
 ---
 
@@ -154,6 +180,18 @@ A 2-3 minute screen recording covering:
 | `AI_Marketing_Team.json` | Modular Tool Workflow Orchestrator | ⭐⭐⭐⭐⭐ |
 | `Think_Agents.json` | Multi-LLM Agent with 7 Tools | ⭐⭐⭐⭐⭐ |
 | `Evaluator_Optimizer.json` | Evaluator-Optimizer Quality Loop | ⭐⭐⭐⭐ |
+
+### Multi-Agent Orchestration (RetroFuture Gadgetry)
+| Workflow | Pattern | Complexity |
+|----------|---------|------------|
+| `Retrofuture_Master_Assistant.json` | Master Orchestrator (routes to 7 agents) | ⭐⭐⭐⭐⭐ |
+| `Retrofuture_Artisan_Production.json` | Production Scheduling Agent | ⭐⭐⭐⭐ |
+| `Retrofuture_Customer_Experience.json` | Customer Support Agent | ⭐⭐⭐⭐ |
+| `Retrofuture_Custom_Orders.json` | Custom Orders Agent | ⭐⭐⭐⭐ |
+| `Retrofuture_Supply_Chain.json` | Supply Chain Agent | ⭐⭐⭐⭐ |
+| `Retrofuture_Workshop_Technical.json` | Workshop Technical Agent | ⭐⭐⭐⭐ |
+| `Retrofuture_Sales_Design.json` | Sales & Design Agent | ⭐⭐⭐⭐ |
+| `Retrofuture_Order_Analytics.json` | Analytics Agent | ⭐⭐⭐⭐ |
 
 ### RAG & Knowledge Base
 | Workflow | Pattern | Complexity |
@@ -175,10 +213,12 @@ A 2-3 minute screen recording covering:
 | Workflow | Pattern | Complexity |
 |----------|---------|------------|
 | `Analytics_Reporting.json` | Daily GA → AI Summary → Email | ⭐⭐ |
+| `Feature_Engineering_n8n.json` | CSV → Code Analysis → LLM Strategy | ⭐⭐⭐⭐ |
 
 ### Business Automation
 | Workflow | Domain | Complexity |
 |----------|--------|------------|
+| `Real_Estate_Lead_Automation.json` | Real Estate: 10 Tools + 3 Sub-Agents | ⭐⭐⭐⭐⭐ |
 | `Lead_Generation_Outreach.json` | Lead enrichment → AI outreach → CRM | ⭐⭐⭐ |
 | `E_commerce_Inventory.json` | Inventory sync → Alerting → Reorder | ⭐⭐⭐ |
 | `Email_Marketing.json` | Segmented campaigns → Personalization → Send | ⭐⭐⭐ |
