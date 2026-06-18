@@ -1,0 +1,292 @@
+# Content Automation Pipelines — Architecture
+
+```mermaid
+flowchart TD
+    %% ===== CONTENT AUTOMATION PIPELINES =====
+    
+    %% BLOG POST PIPELINE
+    subgraph BLOG[Blog Post Pipeline<br/>Blog_Post.json]
+        direction TB
+        Blog_Trigger[ExecuteWorkflowTrigger<br/>blogTopic + targetAudience + chatID]
+        Blog_Tavily[Tavily Web Search<br/>Advanced, 7-day recency]
+        Blog_Agent[Blog Post Agent<br/>GPT-4.1 + Tavily Tool]
+        Blog_ImagePrompt[Image Prompt Agent<br/>GPT-4.1 → Visual Prompt]
+        Blog_ImageGen[OpenAI gpt-image-1<br/>Generate Marketing Graphic]
+        Blog_Binary[Convert to Binary<br/>Base64 → File]
+        Blog_Drive[Google Drive Upload<br/>PNG Asset]
+        Blog_Sheets[Google Sheets Log<br/>Request, Output, Image, Link]
+        Blog_Telegram[Telegram Send<br/>Blog Text + Photo]
+        
+        Blog_Trigger --> Blog_Tavily
+        Blog_Trigger --> Blog_Agent
+        Blog_Agent --> Blog_Tavily
+        Blog_Agent --> Blog_ImagePrompt
+        Blog_ImagePrompt --> Blog_ImageGen
+        Blog_ImageGen --> Blog_Binary
+        Blog_Binary --> Blog_Drive
+        Blog_Binary --> Blog_Telegram
+        Blog_Agent --> Blog_Sheets
+        Blog_ImagePrompt --> Blog_Sheets
+        Blog_Agent --> Blog_Telegram
+    end
+    
+    %% LINKEDIN POST PIPELINE
+    subgraph LINKEDIN[LinkedIn Post Pipeline<br/>LinkedIn_Post.json]
+        direction TB
+        LI_Trigger[ExecuteWorkflowTrigger<br/>postTopic + targetAudience + chatID]
+        LI_Tavily[Tavily Web Search<br/>Advanced, 7-day recency]
+        LI_Agent[LinkedIn Post Agent<br/>GPT-4.1 + Tavily Tool]
+        LI_ImagePrompt[Image Prompt Agent<br/>GPT-4.1 → Visual Prompt]
+        LI_ImageGen[OpenAI gpt-image-1<br/>Generate Marketing Graphic]
+        LI_Binary[Convert to Binary<br/>Base64 → File]
+        LI_Drive[Google Drive Upload<br/>PNG Asset]
+        LI_Sheets[Google Sheets Log<br/>Request, Output, Image, Link]
+        LI_Telegram[Telegram Send<br/>Post Text + Photo]
+        
+        LI_Trigger --> LI_Tavily
+        LI_Trigger --> LI_Agent
+        LI_Agent --> LI_Tavily
+        LI_Agent --> LI_ImagePrompt
+        LI_ImagePrompt --> LI_ImageGen
+        LI_ImageGen --> LI_Binary
+        LI_Binary --> LI_Drive
+        LI_Binary --> LI_Telegram
+        LI_Agent --> LI_Sheets
+        LI_ImagePrompt --> LI_Sheets
+        LI_Agent --> LI_Telegram
+    end
+    
+    %% NEWSLETTER SERVICE
+    subgraph NEWS[Newsletter Service<br/>Newsletter_Service.json]
+        direction TB
+        News_Cron[Weekly Cron<br/>Mon 7AM]
+        News_Fetch[HTTP Request<br/>Fetch Blog Posts]
+        News_Agent[AI Draft Generator<br/>GPT-3.5-turbo]
+        News_Mailchimp[Mailchimp<br/>Send Campaign]
+        
+        News_Cron --> News_Fetch
+        News_Fetch --> News_Agent
+        News_Agent --> News_Mailchimp
+    end
+    
+    %% SOCIAL MEDIA AUTOMATION
+    subgraph SOCIAL[Social Media Automation<br/>Social_Media_Automation.json]
+        direction TB
+        Social_Cron[Daily Cron<br/>9AM]
+        Social_Caption[AI Caption Generator<br/>GPT-3.5-turbo]
+        Social_Image[Canva API<br/>Template + Caption]
+        Social_IG[Instagram Graph API<br/>Publish Media]
+        
+        Social_Cron --> Social_Caption
+        Social_Caption --> Social_Image
+        Social_Image --> Social_IG
+    end
+    
+    %% CONTENT CREATION WORKFLOW (End-to-End)
+    subgraph CONTENT[Content Creation Workflow<br/>Content_Creation_Workflow.json]
+        direction TB
+        Content_Trigger[Manual / Webhook Trigger]
+        Content_Research[Tavily Research<br/>Topic + Audience]
+        Content_Write[AI Writer<br/>GPT-4.1]
+        Content_Review[Review Loop<br/>Quality Check]
+        Content_Publish[Multi-Channel Publish<br/>Blog + LinkedIn + Newsletter]
+        Content_Log[Sheets Audit Log<br/>Full Traceability]
+        
+        Content_Trigger --> Content_Research
+        Content_Research --> Content_Write
+        Content_Write --> Content_Review
+        Content_Review --> Content_Publish
+        Content_Publish --> Content_Log
+    end
+    
+    %% ORCHESTRATOR INTEGRATION
+    subgraph ORCH[AI Marketing Team Orchestrator<br/>AI_Marketing_Team.json]
+        direction TB
+        Orch_Trigger[Telegram Trigger<br/>Voice or Text]
+        Orch_Model[GPT-4.1 via OpenRouter]
+        Orch_Memory[Simple Memory]
+        Orch_Agent[Marketing Team Agent<br/>Routes to Tool Workflows]
+        
+        Orch_Trigger --> Orch_Agent
+        Orch_Model --> Orch_Agent
+        Orch_Memory --> Orch_Agent
+    end
+    
+    %% SHARED INFRASTRUCTURE
+    subgraph INFRA[Shared Infrastructure]
+        direction TB
+        Tavily_API[Tavily Web Search API]
+        GPT41[GPT-4.1 via OpenRouter]
+        GPT35[GPT-3.5-turbo]
+        OpenAIImage[OpenAI gpt-image-1]
+        Google_API[Google: Sheets, Drive, Docs]
+        Telegram_API[Telegram Bot API]
+        Canva_API[Canva API]
+        Mailchimp_API[Mailchimp API]
+        Meta_API[Instagram/Facebook Graph API]
+    end
+    
+    %% TOOL WORKFLOW CONNECTIONS
+    Orch_Agent -.->|tool call: blogPost| Blog_Trigger
+    Orch_Agent -.->|tool call: linkedinPost| LI_Trigger
+    Orch_Agent -.->|tool call: createImage| Content_Research
+    Orch_Agent -.->|tool call: editImage| Content_Research
+    Orch_Agent -.->|tool call: searchImages| Content_Research
+    
+    %% EXTERNAL CONNECTIONS
+    Blog_Tavily --> Tavily_API
+    Blog_Agent --> GPT41
+    Blog_ImagePrompt --> GPT41
+    Blog_ImageGen --> OpenAIImage
+    Blog_Drive --> Google_API
+    Blog_Sheets --> Google_API
+    Blog_Telegram --> Telegram_API
+    
+    LI_Tavily --> Tavily_API
+    LI_Agent --> GPT41
+    LI_ImagePrompt --> GPT41
+    LI_ImageGen --> OpenAIImage
+    LI_Drive --> Google_API
+    LI_Sheets --> Google_API
+    LI_Telegram --> Telegram_API
+    
+    News_Agent --> GPT35
+    News_Mailchimp --> Mailchimp_API
+    
+    Social_Caption --> GPT35
+    Social_Image --> Canva_API
+    Social_IG --> Meta_API
+    
+    Content_Research --> Tavily_API
+    Content_Write --> GPT41
+    Content_Review --> GPT41
+    Content_Publish --> Google_API
+    Content_Log --> Google_API
+    
+    %% STYLING
+    classDef pipeline fill:#1e3a5f,stroke:#3b82f6,stroke-width:2px,color:#fff
+    classDef orchestrator fill:#7c2d12,stroke:#f97316,stroke-width:3px,color:#fff
+    classDef infra fill:#374151,stroke:#9ca3af,stroke-width:1px,color:#fff
+    classDef toolcall fill:#4c1d95,stroke:#a855f7,stroke-width:1px,color:#fff,stroke-dasharray: 5 5
+    
+    class Blog_Trigger,Blog_Tavily,Blog_Agent,Blog_ImagePrompt,Blog_ImageGen,Blog_Binary,Blog_Drive,Blog_Sheets,Blog_Telegram pipeline
+    class LI_Trigger,LI_Tavily,LI_Agent,LI_ImagePrompt,LI_ImageGen,LI_Binary,LI_Drive,LI_Sheets,LI_Telegram pipeline
+    class News_Cron,News_Fetch,News_Agent,News_Mailchimp pipeline
+    class Social_Cron,Social_Caption,Social_Image,Social_IG pipeline
+    class Content_Trigger,Content_Research,Content_Write,Content_Review,Content_Publish,Content_Log pipeline
+    class Orch_Trigger,Orch_Model,Orch_Memory,Orch_Agent orchestrator
+    class Tavily_API,GPT41,GPT35,OpenAIImage,Google_API,Telegram_API,Canva_API,Mailchimp_API,Meta_API infra
+```
+
+---
+
+## Workflow Mapping
+
+| Pipeline | Workflow File | Trigger | Output Channels |
+|----------|---------------|---------|-----------------|
+| Blog Post | `showcase/Blog_Post.json` | Tool Workflow Call | Blog + Image → Drive/Sheets/Telegram |
+| LinkedIn Post | `showcase/LinkedIn_Post.json` | Tool Workflow Call | Post + Image → Drive/Sheets/Telegram |
+| Newsletter | `showcase/Newsletter_Service.json` | Weekly Cron (Mon 7AM) | Mailchimp Campaign |
+| Social Media | `showcase/Social_Media_Automation.json` | Daily Cron (9AM) | Instagram |
+| Content Creation | `showcase/Content_Creation_Workflow.json` | Manual/Webhook | Multi-channel + Sheets Log |
+| Orchestrator | `showcase/AI_Marketing_Team.json` | Telegram (Voice/Text) | Routes to all above |
+
+---
+
+## Content Pipeline Stages (Blog_Post / LinkedIn_Post)
+
+```mermaid
+sequenceDiagram
+    participant Orchestrator
+    participant Tavily
+    participant Agent as Blog/LinkedIn Agent
+    participant ImgPrompt as Image Prompt Agent
+    participant ImgGen as gpt-image-1
+    participant Drive
+    participant Sheets
+    participant Telegram
+    
+    Orchestrator->>Blog_Trigger: {topic, audience, chatID}
+    Blog_Trigger->>Tavily: Search(topic)
+    Tavily-->>Blog_Trigger: Research Results
+    Blog_Trigger->>Agent: Topic + Research + Audience
+    Agent-->>Blog_Trigger: Written Content
+    Agent->>ImgPrompt: Content → Visual Prompt
+    ImgPrompt-->>Agent: Image Prompt
+    Agent->>ImgGen: Generate Image
+    ImgGen-->>Agent: Base64 Image
+    Agent->>Drive: Upload PNG
+    Drive-->>Agent: File Link
+    Agent->>Sheets: Log {topic, audience, content, image, link}
+    Agent->>Telegram: Send Content + Photo
+    Telegram-->>User: Delivered
+```
+
+---
+
+## Governance & Audit Trail (Every Pipeline)
+
+| Logged Field | Source | Purpose |
+|--------------|--------|---------|
+| **Request** | Trigger input | What was asked |
+| **ID** | Drive file ID | Asset traceability |
+| **Link** | Drive webViewLink | Direct asset access |
+| **Post** | Agent output | Full content for review |
+| **Title** | Image prompt title | Visual asset identifier |
+| **Type** | "Post" / "Image" | Filter/segment |
+| **Timestamp** | `{{ $now }}` | Temporal ordering |
+
+---
+
+## Key Architectural Patterns
+
+### 1. **Tool Workflow Pattern** (Core Innovation)
+- Each pipeline (`Blog_Post`, `LinkedIn_Post`) exposed as **callable tool** via `ExecuteWorkflowTrigger`
+- Orchestrator (`AI_Marketing_Team`) routes via `toolWorkflow` nodes
+- Defined I/O schemas → type-safe delegation
+
+### 2. **Research → Write → Visualize → Govern Loop**
+| Stage | Tool | Output |
+|-------|------|--------|
+| Research | Tavily (advanced, 7-day) | Current facts, stats, sources |
+| Write | GPT-4.1 + Audience Param | Tailored content |
+| Visualize | Image Prompt Agent → gpt-image-1 | Marketing graphics |
+| Govern | Sheets + Drive | Full audit trail |
+
+### 3. **Multi-Channel from Single Research**
+- One Tavily search → Blog + LinkedIn + Newsletter + Social
+- Audience parameter adapts tone/depth per channel
+- Eliminates duplicate research
+
+### 4. **Scheduled + On-Demand Hybrid**
+| Pipeline | Trigger | Frequency |
+|----------|---------|-----------|
+| Blog/LinkedIn | Tool Call (On-Demand) | Per request |
+| Newsletter | Cron | Weekly |
+| Social Media | Cron | Daily |
+| Content Creation | Manual/Webhook | Per project |
+
+### 5. **Image Generation Pipeline**
+```
+Content → Image Prompt Agent (GPT-4.1)
+         ↓
+Structured Output: {title, prompt}
+         ↓
+gpt-image-1 (OpenAI)
+         ↓
+Base64 → Binary → Drive Upload
+         ↓
+Sheets Log: {title, prompt, link}
+```
+
+---
+
+## Scaling Content Operations
+
+| Dimension | Current | Scaling Path |
+|-----------|---------|--------------|
+| **Topics/Week** | ~10-20 | Batch Tavily calls, parallel agent execution |
+| **Channels** | 4 (Blog, LI, Newsletter, IG) | Add X, Threads, TikTok via new tool workflows |
+| **Languages** | EN only | Add `language` param → multilingual prompts |
+| **Review** | Automated (Evaluator-Optimizer available) | Human-in-loop via HITL nodes |
+| **Analytics** | Sheets logs | Connect to GA/BigQuery for ROI tracking |

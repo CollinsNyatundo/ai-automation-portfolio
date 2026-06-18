@@ -1,0 +1,180 @@
+# Real Estate Lead Automation — Architecture
+
+```mermaid
+flowchart TD
+    %% ===== REAL ESTATE LEAD AUTOMATION =====
+    
+    %% TRIGGER LAYER
+    subgraph TRIGGER[Trigger Layer]
+        direction TB
+        HL_Trigger[GoHighLevel Trigger<br/>newOrUpdatedLead Event]
+    end
+    
+    %% MAIN ORCHESTRATOR AGENT
+    subgraph ORCHESTRATOR[Real Estate AI Agent<br/>10 Tools + 3 Sub-Agents]
+        direction TB
+        
+        RE_Model[GPT-4o / GPT-4o-mini]
+        RE_Agent[Real Estate AI Agent<br/>Lead Qualification, Agent Assignment, Workflow Orchestration]
+        
+        RE_Model --> RE_Agent
+    end
+    
+    %% TOOLSET (10 Tools)
+    subgraph TOOLS[10 Integrated Tools]
+        direction TB
+        Tool_HL[HighLevel CRM<br/>Update Leads, Tasks, Pipeline]
+        Tool_Cal[Google Calendar<br/>Calls, Showings, Open Houses]
+        Tool_Gmail[Gmail<br/>Emails, Brochures, CC/BCC]
+        Tool_Slack[Slack<br/>Team Notifications, Approvals]
+        Tool_Sheets[Google Sheets<br/>Logs, Errors, Analytics]
+        Tool_DocuSign[DocuSign<br/>E-Signature Documents]
+        Tool_Twilio[Twilio<br/>SMS Notifications, Reminders]
+        Tool_Notion[Notion<br/>Knowledge Base, SOPs]
+        Tool_Zapier[Zapier<br/>External Automations]
+        Tool_Compliance[Compliance Review Agent<br/>Regulatory/Legal Review]
+        Tool_FollowUp[Follow-Up Optimization Agent<br/>Timing & Channel Optimization]
+        Tool_Analytics[Analytics Insights Agent<br/>Insights & Recommendations]
+    end
+    
+    %% BUSINESS RULES ENGINE
+    subgraph RULES[Business Rules Engine]
+        direction TB
+        Rule_Qualify[Lead Qualification<br/>PropertyType, Urgency, Language, Campaign, Location, Price]
+        Rule_Assign[Agent Assignment<br/>Specialty, Language, Region, Workload, PriceRange]
+        Rule_Escalate[Manager Escalation<br/>Score >= 9 → Manager Approval]
+        Rule_Compliance[Compliance Flag<br/>Commercial + High Urgency → Review]
+        Rule_Referral[Referral Bonus<br/>CampaignSource=Referral → +2 Score]
+    end
+    
+    %% SUB-AGENTS (3 Specialized)
+    subgraph SUBAGENTS[3 Sub-Agents]
+        direction TB
+        Sub_Compliance[Compliance Review Agent<br/>Output: {passed, issues, actions}]
+        Sub_FollowUp[Follow-Up Optimization Agent<br/>Timing & Channel Optimization]
+        Sub_Analytics[Analytics Insights Agent<br/>Workflow Data Analysis]
+    end
+    
+    %% EXTERNAL SYSTEMS
+    subgraph EXTERNAL[External Systems]
+        direction TB
+        GoHL[GoHighLevel CRM]
+        GCal[Google Calendar]
+        Gmail_API[Gmail API]
+        Slack_API[Slack API]
+        Sheets_API[Google Sheets API]
+        DocuSign_API[DocuSign API]
+        Twilio_API[Twilio API]
+        Notion_API[Notion API]
+        Zapier_API[Zapier API]
+    end
+    
+    %% CONNECTIONS
+    HL_Trigger --> RE_Agent
+    
+    RE_Agent --> Tool_HL
+    RE_Agent --> Tool_Cal
+    RE_Agent --> Tool_Gmail
+    RE_Agent --> Tool_Slack
+    RE_Agent --> Tool_Sheets
+    RE_Agent --> Tool_DocuSign
+    RE_Agent --> Tool_Twilio
+    RE_Agent --> Tool_Notion
+    RE_Agent --> Tool_Zapier
+    RE_Agent --> Tool_Compliance
+    RE_Agent --> Tool_FollowUp
+    RE_Agent --> Tool_Analytics
+    
+    Tool_HL --> GoHL
+    Tool_Cal --> GCal
+    Tool_Gmail --> Gmail_API
+    Tool_Slack --> Slack_API
+    Tool_Sheets --> Sheets_API
+    Tool_DocuSign --> DocuSign_API
+    Tool_Twilio --> Twilio_API
+    Tool_Notion --> Notion_API
+    Tool_Zapier --> Zapier_API
+    
+    RE_Agent --> Rule_Qualify
+    Rule_Qualify --> Rule_Assign
+    Rule_Assign --> Rule_Escalate
+    Rule_Assign --> Rule_Compliance
+    Rule_Qualify --> Rule_Referral
+    
+    Tool_Compliance --> Sub_Compliance
+    Tool_FollowUp --> Sub_FollowUp
+    Tool_Analytics --> Sub_Analytics
+    
+    %% STYLING
+    classDef trigger fill:#7c2d12,stroke:#f97316,stroke-width:3px,color:#fff
+    classDef orchestrator fill:#1e3a5f,stroke:#3b82f6,stroke-width:3px,color:#fff
+    classDef tool fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#fff
+    classDef rules fill:#4c1d95,stroke:#a855f7,stroke-width:2px,color:#fff
+    classDef subagent fill:#7c2d12,stroke:#f97316,stroke-width:2px,color:#fff,stroke-dasharray: 5 5
+    classDef ext fill:#374151,stroke:#9ca3af,stroke-width:1px,color:#fff
+    
+    class HL_Trigger trigger
+    class RE_Model,RE_Agent orchestrator
+    class Tool_HL,Tool_Cal,Tool_Gmail,Tool_Slack,Tool_Sheets,Tool_DocuSign,Tool_Twilio,Tool_Notion,Tool_Zapier,Tool_Compliance,Tool_FollowUp,Tool_Analytics tool
+    class Rule_Qualify,Rule_Assign,Rule_Escalate,Rule_Compliance,Rule_Referral rules
+    class Sub_Compliance,Sub_FollowUp,Sub_Analytics subagent
+    class GoHL,GCal,Gmail_API,Slack_API,Sheets_API,DocuSign_API,Twilio_API,Notion_API,Zapier_API ext
+```
+
+---
+
+## Workflow Mapping
+
+| Component | Workflow File | Purpose |
+|-----------|---------------|---------|
+| Real Estate AI Agent | `showcase/Real_Estate_Lead_Automation.json` | Main orchestrator with 10 tools + 3 sub-agents |
+| GoHighLevel Trigger | Embedded in workflow | Lead capture from CRM |
+| 10 Tools | Embedded as LangChain tools | CRM, Calendar, Email, Slack, Sheets, DocuSign, Twilio, Notion, Zapier |
+| 3 Sub-Agents | Embedded as LangChain agents | Compliance, Follow-Up Optimization, Analytics |
+
+---
+
+## Business Rules Summary
+
+| Rule | Condition | Action |
+|------|-----------|--------|
+| **Qualification** | PropertyType, Urgency, Language, CampaignSource, Location, PriceRange | Score lead 1-10 |
+| **Agent Assignment** | Spanish + Miami → Maria; PriceRange > $2M → Luxury Team; No match → General Pool + Flag | Auto-assign or escalate |
+| **Escalation** | Score >= 9 | Manager approval required |
+| **Compliance** | Commercial + High Urgency | Send to Compliance Review Agent |
+| **Referral Bonus** | CampaignSource = Referral | Increase score by 2 |
+| **Contracts** | All contract actions | Use DocuSign |
+| **Urgent Notifications** | High urgency | Twilio SMS |
+| **Policy Reference** | Any procedural question | Notion knowledge base |
+
+---
+
+## Key Architectural Patterns
+
+### 1. **Single Agent with Extensive Toolset (10 Tools)**
+- One master agent orchestrates entire lead lifecycle
+- Tools cover: CRM, Scheduling, Email, Chat, Docs, E-Sign, SMS, Knowledge, Integration
+- Eliminates handoffs between multiple agents
+
+### 2. **Business Rules as Explicit Logic (Not Prompts)**
+- Qualification, assignment, escalation encoded as structured rules
+- Deterministic, auditable, testable — not hidden in prompts
+- Easy to modify: change rules without retraining model
+
+### 3. **Sub-Agents for Specialized Expertise**
+- Compliance Review: Legal/regulatory expertise
+- Follow-Up Optimization: Timing/channel science
+- Analytics Insights: Data pattern recognition
+- Called as tools by main agent — not independent
+
+### 4. **Multi-Channel Communication**
+| Channel | Tool | Use Case |
+|---------|------|----------|
+| CRM | HighLevel | Lead lifecycle |
+| Calendar | Google Calendar | Showings, calls |
+| Email | Gmail | Brochures, contracts |
+| Chat | Slack | Team coordination |
+| Docs | DocuSign | E-signatures |
+| SMS | Twilio | Urgent alerts |
+| Knowledge | Notion | SOPs, policies |
+| Integration | Zapier | External systems |

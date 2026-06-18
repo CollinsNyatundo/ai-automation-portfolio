@@ -1,0 +1,227 @@
+# RAG Pipeline & Knowledge Base — Architecture
+
+```mermaid
+flowchart TD
+    %% ===== RAG PIPELINE & KNOWLEDGE BASE =====
+    
+    %% INGESTION PIPELINE
+    subgraph INGEST[RAG Ingestion Pipeline<br/>Data_to_Pinecone]
+        direction TB
+        Ingest_Trigger[Manual Trigger / Schedule]
+        Ingest_Drive[Google Drive<br/>Source Documents]
+        Ingest_Extract[Extract from File<br/>Text Extraction]
+        Ingest_Split[Recursive Character<br/>Text Splitter]
+        Ingest_Embed[OpenAI Embeddings<br/>text-embedding-3-small]
+        Ingest_Pinecone[Pinecone Vector Store<br/>Upsert to Index + Namespace]
+        
+        Ingest_Trigger --> Ingest_Drive
+        Ingest_Drive --> Ingest_Extract
+        Ingest_Extract --> Ingest_Split
+        Ingest_Split --> Ingest_Embed
+        Ingest_Embed --> Ingest_Pinecone
+    end
+    
+    %% RETRIEVAL INTERFACES
+    subgraph RETRIEVE[Retrieval Interfaces]
+        direction TB
+        
+        %% Voice RAG Agent
+        subgraph VOICE[Voice RAG Agent<br/>Voice_RAG_Agent]
+            Voice_Webhook[Webhook<br/>POST /voice-rag]
+            Voice_Agent[Agent<br/>OpenAI Chat Model]
+            Voice_VectorTool[VectorStoreTool<br/>Pinecone Query]
+            Voice_Pinecone[Pinecone Vector Store<br/>Namespace: projects]
+            Voice_Response[Respond to Webhook<br/>JSON Response]
+            
+            Voice_Webhook --> Voice_Agent
+            Voice_Agent --> Voice_VectorTool
+            Voice_VectorTool --> Voice_Pinecone
+            Voice_Agent --> Voice_Response
+        end
+        
+        %% Chatbot RAG Pipeline
+        subgraph CHATBOT[Chatbot RAG Pipeline<br/>RAG_Pipeline___Chatbot]
+            Chat_Trigger[Chat Trigger<br/>User Message]
+            Chat_Agent[Agent<br/>OpenAI Chat Model]
+            Chat_VectorTool[VectorStoreTool<br/>Pinecone Query]
+            Chat_Pinecone[Pinecone Vector Store<br/>Namespace: projects]
+            Chat_Response[Chat Response]
+            
+            Chat_Trigger --> Chat_Agent
+            Chat_Agent --> Chat_VectorTool
+            Chat_VectorTool --> Chat_Pinecone
+            Chat_Agent --> Chat_Response
+        end
+        
+        %% Think Agents RAG Tool
+        subgraph THINK_RAG[Think Agents RAG Tool]
+            Think_Tool[VectorStoreTool<br/>Pinecone Query]
+            Think_Pinecone[Pinecone Vector Store<br/>Namespace: FAQ]
+            Think_Agent[Think Agent<br/>7 Tools]
+            
+            Think_Agent --> Think_Tool
+            Think_Tool --> Think_Pinecone
+        end
+    end
+    
+    %% SHARED INFRASTRUCTURE
+    subgraph INFRA[Shared Infrastructure]
+        direction TB
+        Pinecone_Index[(Pinecone Index<br/>Vector Database)]
+        Pinecone_NS_Marketing[Namespace: marketing]
+        Pinecone_NS_Projects[Namespace: projects]
+        Pinecone_NS_FAQ[Namespace: faq]
+        OpenAI_Embed[OpenAI Embeddings<br/>text-embedding-3-small]
+        OpenAI_Chat[OpenAI Chat Models<br/>GPT-4 / GPT-4o]
+        Google_Drive[Google Drive<br/>Source Documents]
+    end
+    
+    %% CONNECTIONS
+    Ingest_Pinecone --> Pinecone_Index
+    Ingest_Extract --> OpenAI_Embed
+    Ingest_Embed --> OpenAI_Embed
+    Ingest_Drive --> Google_Drive
+    
+    Voice_Agent --> OpenAI_Chat
+    Voice_VectorTool --> Pinecone_Index
+    Voice_Pinecone --> Pinecone_NS_Projects
+    
+    Chat_Agent --> OpenAI_Chat
+    Chat_VectorTool --> Pinecone_Index
+    Chat_Pinecone --> Pinecone_NS_Projects
+    
+    Think_Agent --> OpenAI_Chat
+    Think_Tool --> Pinecone_Index
+    Think_Pinecone --> Pinecone_NS_FAQ
+    
+    Pinecone_Index --> Pinecone_NS_Marketing
+    Pinecone_Index --> Pinecone_NS_Projects
+    Pinecone_Index --> Pinecone_NS_FAQ
+    
+    %% DATA FLOW ANNOTATIONS
+    Ingest_Flow[1. Ingest: Drive → Extract → Chunk → Embed → Upsert] -.-> Ingest_Drive
+    Query_Flow[2. Query: Embed Question → Vector Search → Retrieve → Generate] -.-> Voice_Webhook
+    
+    %% STYLING
+    classDef ingest fill:#1e3a5f,stroke:#3b82f6,stroke-width:2px,color:#fff
+    classDef retrieve fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#fff
+    classDef infra fill:#4c1d95,stroke:#a855f7,stroke-width:2px,color:#fff
+    classDef flow fill:#7c2d12,stroke:#f97316,stroke-width:1px,color:#fff,stroke-dasharray: 5 5
+    
+    class Ingest_Trigger,Ingest_Drive,Ingest_Extract,Ingest_Split,Ingest_Embed,Ingest_Pinecone ingest
+    class Voice_Webhook,Voice_Agent,Voice_VectorTool,Voice_Pinecone,Voice_Response,Chat_Trigger,Chat_Agent,Chat_VectorTool,Chat_Pinecone,Chat_Response,Think_Tool,Think_Pinecone,Think_Agent retrieve
+    class Pinecone_Index,Pinecone_NS_Marketing,Pinecone_NS_Projects,Pinecone_NS_FAQ,OpenAI_Embed,OpenAI_Chat,Google_Drive infra
+    class Ingest_Flow,Query_Flow flow
+```
+
+---
+
+## Workflow Mapping
+
+| Component | Workflow File | Purpose |
+|-----------|---------------|---------|
+| Ingestion Pipeline | `showcase/Data_to_Pinecone.json` | Drive → Extract → Chunk → Embed → Pinecone |
+| Voice RAG Agent | `showcase/Voice_RAG_Agent.json` | Webhook → Agent → Pinecone Tool → Response |
+| Chatbot RAG | `showcase/RAG_Pipeline___Chatbot.json` | Chat Trigger → Agent → Pinecone Tool → Response |
+| Think Agents RAG | `showcase/Think_Agents.json` | Tool: VectorStoreTool (Pinecone) |
+
+---
+
+## Namespace Strategy
+
+| Namespace | Purpose | Source Documents |
+|-----------|---------|------------------|
+| `marketing` | Marketing content, campaigns, brand docs | Blog posts, campaign briefs, brand guidelines |
+| `projects` | Project documentation, technical specs | Project plans, API docs, architecture decisions |
+| `faq` | Internal FAQ, policies, SOPs | HR policies, operational procedures, troubleshooting |
+
+---
+
+## Ingestion Pipeline Details
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Drive as Google Drive
+    participant Extract as Extract from File
+    participant Split as RecursiveCharacterTextSplitter
+    participant Embed as OpenAI Embeddings
+    participant Pinecone as Pinecone Vector Store
+    
+    User->>Ingest_Trigger: Run Ingestion
+    Ingest_Trigger->>Drive: Download Document
+    Drive-->>Extract: File Content
+    Extract-->>Split: Raw Text
+    Split-->>Embed: Text Chunks (500-1000 tokens)
+    Embed-->>Pinecone: Vectors + Metadata
+    Pinecone-->>User: Upsert Complete
+```
+
+### Chunking Strategy
+- **Splitter**: RecursiveCharacterTextSplitter
+- **Chunk Size**: ~500-1000 tokens
+- **Overlap**: 100-200 tokens for context preservation
+- **Metadata**: Source file, page/section, timestamp
+
+---
+
+## Query Flow (Voice RAG Agent)
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Webhook
+    participant Agent as Voice RAG Agent
+    participant Tool as VectorStoreTool
+    participant Pinecone
+    participant LLM as OpenAI Chat
+    
+    User->>Webhook: POST {question}
+    Webhook->>Agent: Question
+    Agent->>Tool: Search Query
+    Tool->>Pinecone: Vector Search (top-k=5)
+    Pinecone-->>Tool: Relevant Chunks
+    Tool-->>Agent: Context
+    Agent->>LLM: Question + Context
+    LLM-->>Agent: Answer
+    Agent-->>Webhook: JSON Response
+    Webhook-->>User: Answer
+```
+
+---
+
+## Key Architectural Patterns
+
+### 1. **RAG-as-a-Tool Pattern**
+- Ingestion pipeline runs independently (scheduled or manual)
+- Retrieval exposed as **LangChain Tool** (`VectorStoreTool`)
+- Any agent can use Pinecone via tool interface — no direct coupling
+
+### 2. **Namespace Segregation**
+- Logical separation of knowledge domains
+- Prevents cross-contamination (marketing queries don't return HR policies)
+- Easy to add new domains: create namespace + ingest pipeline
+
+### 3. **Multiple Retrieval Interfaces**
+| Interface | Trigger | Use Case |
+|-----------|---------|----------|
+| Voice RAG | Webhook (POST) | Voice assistants, phone systems, async queries |
+| Chatbot | Chat Trigger | Slack/Teams bots, web chat, internal helpdesk |
+| Think Agent | Tool Call | Multi-tool agent needing knowledge lookup |
+
+### 4. **Embedding Consistency**
+- Single embedding model (`text-embedding-3-small`) for all namespaces
+- Ensures vector space compatibility
+- Easy to migrate: re-embed all namespaces with new model
+
+---
+
+## Scaling Considerations
+
+| Aspect | Current | Scaling Path |
+|--------|---------|--------------|
+| **Vector Count** | ~10K vectors | Pinecone scales to billions |
+| **Query Latency** | ~200-500ms | Increase pod size / replicas |
+| **Namespaces** | 3 | Add per-department / per-project |
+| **Embedding Model** | text-embedding-3-small | Upgrade to 3-large for accuracy |
+| **Chunk Strategy** | Recursive (fixed) | Semantic chunking for better retrieval |

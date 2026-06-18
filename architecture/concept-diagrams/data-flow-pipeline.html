@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Flow Pipeline Pattern</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: 'JetBrains Mono', monospace; 
+      background: #fffffe; 
+      min-height: 100vh; 
+      display: flex; 
+      justify-content: center; 
+      padding: 40px 20px; 
+    }
+    @media (prefers-color-scheme: dark) {
+      body { background: #020617; }
+      .box { fill: #1e293b; stroke: #334155; }
+      .box.c-purple { fill: #4c1d95; stroke: #7c3aed; }
+      .box.c-teal { fill: #134e4a; stroke: #0f766e; }
+      .box.c-coral { fill: #7c2d12; stroke: #ea580c; }
+      .box.c-gray { fill: #1e293b; stroke: #475569; }
+      .arr, .leader { stroke: #334155; }
+      .th, .ts, .t { fill: #f8fafc; }
+      .c-purple { stroke: #a78bfa; }
+      .c-teal { stroke: #0f766e; }
+      .c-coral { stroke: #ea580c; }
+      .c-gray { stroke: #64748b; }
+      .container { stroke: none; }
+      .title { fill: #f8fafc; }
+      .subtitle { fill: #94a3b8; }
+    }
+    .diagram-container { max-width: 720px; width: 100%; }
+  </style>
+</head>
+<body>
+  <div class="diagram-container">
+    <svg width="680" viewBox="0 0 680 420" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5"
+                markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke"
+                stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+      </defs>
+
+      <!-- Title -->
+      <text x="340" y="30" class="title th" text-anchor="middle" font-size="18" font-weight="500">Data Flow Pipeline Pattern</text>
+      <text x="340" y="50" class="subtitle ts" text-anchor="middle" font-size="12">Source → Process → Sink  •  Left-to-right flow with semantic colors</text>
+
+      <!-- Source Layer -->
+      <g class="container c-coral" transform="translate(40, 80)">
+        <rect x="0" y="0" width="160" height="100" rx="12" stroke-width="0.5"/>
+        <text class="th" x="80" y="30" text-anchor="middle" dominant-baseline="central">Source Layer</text>
+        <text class="ts" x="80" y="54" text-anchor="middle" dominant-baseline="central">Data Origins</text>
+        <text class="t" x="80" y="78" text-anchor="middle" dominant-baseline="central">
+          <tspan x="80" dy="0">• Google Drive (docs, sheets)</tspan>
+          <tspan x="80" dy="16">• APIs (webhooks, HTTP)</tspan>
+          <tspan x="80" dy="16">• Databases (PostgreSQL)</tspan>
+        </text>
+      </g>
+
+      <!-- Arrow -->
+      <line x1="200" y1="130" x2="260" y2="130" class="arr" marker-end="url(#arrow)" stroke-width="1.5"/>
+
+      <!-- Process Layer -->
+      <g class="container c-purple" transform="translate(260, 80)">
+        <rect x="0" y="0" width="160" height="100" rx="12" stroke-width="0.5"/>
+        <text class="th" x="80" y="30" text-anchor="middle" dominant-baseline="central">Process Layer</text>
+        <text class="ts" x="80" y="54" text-anchor="middle" dominant-baseline="central">Transformation</text>
+        <text class="t" x="80" y="78" text-anchor="middle" dominant-baseline="central">
+          <tspan x="80" dy="0">• Extract & Parse</tspan>
+          <tspan x="80" dy="16">• Chunk & Embed</tspan>
+          <tspan x="80" dy="16">• LLM Analysis</tspan>
+        </text>
+      </g>
+
+      <!-- Arrow -->
+      <line x1="420" y1="130" x2="480" y2="130" class="arr" marker-end="url(#arrow)" stroke-width="1.5"/>
+
+      <!-- Sink Layer -->
+      <g class="container c-teal" transform="translate(480, 80)">
+        <rect x="0" y="0" width="160" height="100" rx="12" stroke-width="0.5"/>
+        <text class="th" x="80" y="30" text-anchor="middle" dominant-baseline="central">Sink Layer</text>
+        <text class="ts" x="80" y="54" text-anchor="middle" dominant-baseline="central">Destinations</text>
+        <text class="t" x="80" y="78" text-anchor="middle" dominant-baseline="central">
+          <tspan x="80" dy="0">• Pinecone (vectors)</tspan>
+          <tspan x="80" dy="16">• Google Sheets (logs)</tspan>
+          <tspan x="80" dy="16">• Google Drive (assets)</tspan>
+        </text>
+      </g>
+
+      <!-- Detail Row: Pipeline Examples -->
+      <g transform="translate(40, 220)">
+        <text class="th" x="0" y="0">Pipeline Examples (Same Pattern, Different Domains)</text>
+      </g>
+
+      <!-- RAG Ingestion Pipeline -->
+      <g class="container" transform="translate(40, 260)">
+        <rect x="0" y="0" width="600" height="80" rx="8" stroke-width="0.5" class="c-gray"/>
+        <text class="th" x="20" y="24">RAG Ingestion</text>
+        <text class="ts" x="20" y="44">Drive → Extract → Chunk → Embed → Pinecone Upsert</text>
+        <g class="leader c-coral" transform="translate(410, 20)">
+          <line x1="0" y1="0" x2="50" y2="0" marker-end="url(#arrow)"/>
+        </g>
+        <g class="leader c-purple" transform="translate(460, 20)">
+          <line x1="0" y1="0" x2="50" y2="0" marker-end="url(#arrow)"/>
+        </g>
+        <g class="leader c-teal" transform="translate(510, 20)">
+          <line x1="0" y1="0" x2="50" y2="0" marker-end="url(#arrow)"/>
+        </g>
+        <text class="t" x="420" y="4" font-size="10">Source</text>
+        <text class="t" x="470" y="4" font-size="10">Process</text>
+        <text class="t" x="520" y="4" font-size="10">Sink</text>
+      </g>
+
+      <!-- Content Pipeline -->
+      <g class="container" transform="translate(40, 350)">
+        <rect x="0" y="0" width="600" height="80" rx="8" stroke-width="0.5" class="c-gray"/>
+        <text class="th" x="20" y="24">Content Pipeline</text>
+        <text class="ts" x="20" y="44">Tavily Research → GPT-4.1 Write → gpt-image-1 → Sheets/Drive/Telegram</text>
+        <g class="leader c-coral" transform="translate(410, 20)">
+          <line x1="0" y1="0" x2="50" y2="0" marker-end="url(#arrow)"/>
+        </g>
+        <g class="leader c-purple" transform="translate(460, 20)">
+          <line x1="0" y1="0" x2="50" y2="0" marker-end="url(#arrow)"/>
+        </g>
+        <g class="leader c-teal" transform="translate(510, 20)">
+          <line x1="0" y1="0" x2="50" y2="0" marker-end="url(#arrow)"/>
+        </g>
+        <text class="t" x="420" y="4" font-size="10">Source</text>
+        <text class="t" x="470" y="4" font-size="10">Process</text>
+        <text class="t" x="520" y="4" font-size="10">Sink</text>
+      </g>
+
+      <!-- ETL / Inventory Pipeline -->
+      <g class="container" transform="translate(40, 440)">
+        <rect x="0" y="0" width="600" height="80" rx="8" stroke-width="0.5" class="c-gray"/>
+        <text class="th" x="20" y="24">Inventory Automation</text>
+        <text class="ts" x="20" y="44">Shopify API → Stock Check → Alert (Slack) + Reorder (PO) → Sheets Log</text>
+        <g class="leader c-coral" transform="translate(410, 20)">
+          <line x1="0" y1="0" x2="50" y2="0" marker-end="url(#arrow)"/>
+        </g>
+        <g class="leader c-purple" transform="translate(460, 20)">
+          <line x1="0" y1="0" x2="50" y2="0" marker-end="url(#arrow)"/>
+        </g>
+        <g class="leader c-teal" transform="translate(510, 20)">
+          <line x1="0" y1="0" x2="50" y2="0" marker-end="url(#arrow)"/>
+        </g>
+        <text class="t" x="420" y="4" font-size="10">Source</text>
+        <text class="t" x="470" y="4" font-size="10">Process</text>
+        <text class="t" x="520" y="4" font-size="10">Sink</text>
+      </g>
+
+      <!-- Legend -->
+      <g transform="translate(40, 540)">
+        <text class="th" x="0" y="0">Color Semantics (Consistent Across All Pipelines)</text>
+        <g class="c-coral" transform="translate(0, 30)">
+          <rect x="0" y="0" width="24" height="24" rx="4" stroke-width="0.5"/>
+          <text class="ts" x="32" y="17">Coral — Sources / Inputs</text>
+        </g>
+        <g class="c-purple" transform="translate(240, 30)">
+          <rect x="0" y="0" width="24" height="24" rx="4" stroke-width="0.5"/>
+          <text class="ts" x="32" y="17">Purple — Processing / Transformation</text>
+        </g>
+        <g class="c-teal" transform="translate(500, 30)">
+          <rect x="0" y="0" width="24" height="24" rx="4" stroke-width="0.5"/>
+          <text class="ts" x="32" y="17">Teal — Sinks / Outputs</text>
+        </g>
+      </g>
+
+      <!-- Key Principles -->
+      <g transform="translate(40, 620)">
+        <text class="th" x="0" y="0">Key Principles</text>
+        <g transform="translate(0, 25)">
+          <text class="ts" x="0" y="0">▸ Color encodes meaning, not sequence — coral=source, purple=process, teal=sink</text>
+          <text class="ts" x="0" y="20">▸ Left-to-right flow for linear pipelines; top-down for branching</text>
+          <text class="ts" x="0" y="40">▸ Governance built-in: every sink logs to Sheets + stores in Drive</text>
+          <text class="ts" x="0" y="60">▸ Reusable pattern: same 3-layer architecture across RAG, content, inventory, email</text>
+        </g>
+      </g>
+    </svg>
+  </div>
+</body>
+</html>

@@ -1,0 +1,155 @@
+# Core AI Agent Patterns — Architecture
+
+```mermaid
+flowchart TD
+    %% ===== CORE AI AGENT PATTERNS =====
+    subgraph CORE[Core AI Agent Patterns]
+        direction TB
+        
+        %% AI_MARKETING_TEAM
+        subgraph MKT[AI Marketing Team Orchestrator]
+            direction TB
+            MKT_Trigger[Telegram Trigger]
+            MKT_Memory[Simple Memory]
+            MKT_Model[GPT-4.1 via OpenRouter]
+            MKT_Agent[Marketing Team Agent]
+            
+            MKT_Trigger --> MKT_Agent
+            MKT_Memory --> MKT_Agent
+            MKT_Model --> MKT_Agent
+        end
+        
+        %% TOOL WORKFLOWS (Called as Tools)
+        subgraph TOOLS[Modular Tool Workflows]
+            direction TB
+            Tool_Blog[Blog Post Tool<br/>Tavily → GPT-4.1 → gpt-image-1 → Sheets/Drive]
+            Tool_LinkedIn[LinkedIn Post Tool<br/>Tavily → GPT-4.1 → gpt-image-1 → Sheets/Drive]
+            Tool_Image[Create Image Tool<br/>GPT-4.1 → gpt-image-1 → Drive]
+            Tool_Edit[Edit Image Tool<br/>GPT-4.1 → gpt-image-1 → Drive]
+            Tool_Search[Search Images Tool<br/>Pinecone Vector Search]
+            Tool_Video[Video Tool<br/>PiAPI/Runway/ElevenLabs]
+        end
+        
+        %% EVALUATOR-OPTIMIZER
+        subgraph EVAL[Evaluator-Optimizer Quality Loop]
+            direction TB
+            Eval_Generator[Generator Agent<br/>GPT-4o-mini]
+            Eval_Evaluator[Evaluator Agent<br/>Criteria: Quote, Humor, No Emojis]
+            Eval_Optimizer[Optimizer Agent<br/>GPT-4o-mini / DeepSeek R1]
+            Eval_Docs[Google Docs Output]
+            Eval_Control{Finished?}
+            
+            Eval_Generator --> Eval_Evaluator
+            Eval_Evaluator -->|Not Finished| Eval_Control
+            Eval_Control -->|No| Eval_Optimizer
+            Eval_Optimizer --> Eval_Generator
+            Eval_Control -->|Yes| Eval_Docs
+        end
+        
+        %% THINK_AGENTS
+        subgraph THINK[Think Agents Multi-LLM Orchestrator]
+            direction TB
+            Think_Model_GPT[GPT-4.1]
+            Think_Model_Claude[Claude 3.5 Sonnet]
+            Think_Model_Gemini[Gemini 2.0 Flash]
+            Think_Model_DeepSeek[DeepSeek R1]
+            Think_Agent[Think Agent<br/>7 Tools]
+            Think_Tools[Think | Pinecone RAG | Gmail | Airtable | Tavily | Calendar | Email]
+            
+            Think_Model_GPT --> Think_Agent
+            Think_Model_Claude --> Think_Agent
+            Think_Model_Gemini --> Think_Agent
+            Think_Model_DeepSeek --> Think_Agent
+            Think_Tools --> Think_Agent
+        end
+    end
+    
+    %% TOOL CONNECTIONS
+    MKT_Agent -.->|tool call| Tool_Blog
+    MKT_Agent -.->|tool call| Tool_LinkedIn
+    MKT_Agent -.->|tool call| Tool_Image
+    MKT_Agent -.->|tool call| Tool_Edit
+    MKT_Agent -.->|tool call| Tool_Search
+    MKT_Agent -.->|tool call| Tool_Video
+    
+    %% EXTERNAL INTEGRATIONS
+    subgraph EXT[External Integrations]
+        direction TB
+        LLM[LLMs: GPT-4.1, GPT-4o-mini,<br/>Claude 3.5, Gemini 2.0, DeepSeek R1]
+        VectorDB[Pinecone Vector DB]
+        Google[Google: Sheets, Drive, Docs, Calendar, Gmail]
+        Airtable[Airtable]
+        Tavily[Tavily Web Search]
+        Telegram[Telegram Bot]
+        OpenAIImg[OpenAI gpt-image-1]
+        DeepSeek[DeepSeek API]
+    end
+    
+    Tool_Blog --> Tavily
+    Tool_Blog --> LLM
+    Tool_Blog --> OpenAIImg
+    Tool_Blog --> Google
+    Tool_LinkedIn --> Tavily
+    Tool_LinkedIn --> LLM
+    Tool_LinkedIn --> OpenAIImg
+    Tool_LinkedIn --> Google
+    Tool_Image --> LLM
+    Tool_Image --> OpenAIImg
+    Tool_Image --> Google
+    Tool_Search --> VectorDB
+    Eval_Generator --> LLM
+    Eval_Evaluator --> LLM
+    Eval_Optimizer --> LLM
+    Eval_Optimizer --> DeepSeek
+    Think_Agent --> VectorDB
+    Think_Agent --> Tavily
+    Think_Agent --> Google
+    Think_Agent --> Airtable
+    
+    %% STYLING
+    classDef orchestrator fill:#1e3a5f,stroke:#3b82f6,stroke-width:2px,color:#fff
+    classDef tool fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#fff
+    classDef quality fill:#7c2d12,stroke:#f97316,stroke-width:2px,color:#fff
+    classDef multiLLM fill:#4c1d95,stroke:#a855f7,stroke-width:2px,color:#fff
+    classDef ext fill:#374151,stroke:#9ca3af,stroke-width:1px,color:#fff
+    
+    class MKT_Trigger,MKT_Model,MKT_Agent,MKT_Memory orchestrator
+    class Tool_Blog,Tool_LinkedIn,Tool_Image,Tool_Edit,Tool_Search,Tool_Video tool
+    class Eval_Generator,Eval_Evaluator,Eval_Optimizer,Eval_Docs,Eval_Control quality
+    class Think_Model_GPT,Think_Model_Claude,Think_Model_Gemini,Think_Model_DeepSeek,Think_Agent multiLLM
+    class LLM,VectorDB,Google,Airtable,Tavily,Telegram,OpenAIImg,DeepSeek ext
+```
+
+---
+
+## Workflow Mapping
+
+| Diagram Component | Workflow File | Pattern |
+|-------------------|---------------|---------|
+| AI Marketing Team Orchestrator | `showcase/AI_Marketing_Team.json` | Modular Tool Workflow |
+| Blog Post Tool | `showcase/Blog_Post.json` | Governed SEO Pipeline |
+| LinkedIn Post Tool | `showcase/LinkedIn_Post.json` | Governed Social Pipeline |
+| Create/Edit/Search Image Tools | `showcase/Feature_Engineering_n8n.json`* | Image Generation |
+| Evaluator-Optimizer Loop | `showcase/Evaluator_Optimizer.json` | Quality Gate Loop |
+| Think Agents | `showcase/Think_Agents.json` | Multi-LLM + 7 Tools |
+
+*Image tools are sub-workflows called by `AI_Marketing_Team` — see `showcase/AI_Marketing_Team.json` for toolWorkflow nodes.
+
+---
+
+## Key Architectural Patterns
+
+### 1. **Modular Tool Workflow Pattern** (AI Marketing Team)
+- Master agent delegates to **6 specialized sub-workflows** exposed as callable tools
+- Each tool has defined I/O schema, versioned independently, testable in isolation
+- Teams invoke via Telegram/chat/API — no n8n canvas knowledge required
+
+### 2. **Evaluator-Optimizer Quality Loop** (Evaluator_Optimizer)
+- Generator → Evaluator (explicit criteria) → Optimizer → loops until "Finished"
+- Eliminates manual review; quality enforced as code, not hope
+- Final output pushed to Google Docs for audit trail
+
+### 3. **Multi-LLM Orchestration** (Think_Agents)
+- 4 LLMs (GPT-4.1, Claude 3.5, Gemini 2.0, DeepSeek R1) for different strengths
+- 7 tools: Think, Pinecone RAG, Gmail, Airtable, Tavily, Calendar, Email
+- Agent self-verifies via Think tool before acting

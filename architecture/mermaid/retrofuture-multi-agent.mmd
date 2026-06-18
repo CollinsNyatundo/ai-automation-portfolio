@@ -1,0 +1,170 @@
+# RetroFuture Multi-Agent Orchestration — Architecture
+
+```mermaid
+flowchart TD
+    %% ===== RETROFUTURE GADGETRY — 8 AGENT ORCHESTRATION =====
+    
+    %% MASTER ORCHESTRATOR
+    subgraph MASTER[RetroFuture Master Assistant]
+        direction TB
+        Master_Trigger[Chat Trigger<br/>User Query]
+        Master_Model[GPT-4o]
+        Master_Memory[Conversation Memory<br/>Session-based]
+        Master_Agent[Master Assistant Agent<br/>Routes to 7 specialized agents]
+        
+        Master_Trigger --> Master_Agent
+        Master_Memory --> Master_Agent
+        Master_Model --> Master_Agent
+    end
+    
+    %% SPECIALIZED AGENTS (Called as ToolWorkflows)
+    subgraph AGENTS[Specialized Domain Agents]
+        direction TB
+        
+        Agent_Production[Artisan Production Agent<br/>Scheduling, Artisans, Quality, Workshop Ops]
+        Agent_Customer[Customer Experience Agent<br/>Inquiries, Order Status, Returns, Care]
+        Agent_Orders[Custom Orders Agent<br/>New Orders, Personalization, Pricing, Design]
+        Agent_Supply[Supply Chain Agent<br/>Components, Suppliers, Inventory, Sourcing]
+        Agent_Workshop[Workshop Technical Agent<br/>Equipment, Tools, Techniques, Safety]
+        Agent_Sales[Sales & Design Agent<br/>Launches, Editions, Partnerships, Wholesale]
+        Agent_Analytics[Order Analytics Agent<br/>Metrics, Reporting, Dashboards, Inventory]
+    end
+    
+    %% ROUTING LOGIC
+    subgraph ROUTING[Routing Logic]
+        direction TB
+        Route_Prod[Production Queries<br/>Scheduling, Quality, Artisans]
+        Route_Cust[Customer Queries<br/>Support, Status, Returns]
+        Route_Orders[Custom Orders<br/>New, Personalization, Pricing]
+        Route_Supply[Supply Chain<br/>Components, Inventory, Sourcing]
+        Route_Workshop[Workshop Tech<br/>Equipment, Tools, Safety]
+        Route_Sales[Sales & Design<br/>Launches, Partnerships]
+        Route_Analytics[Analytics<br/>Metrics, Reports, Dashboards]
+    end
+    
+    %% COMPANY CONTEXT
+    subgraph CONTEXT[RetroFuture Gadgetry Context]
+        direction TB
+        Context_Style[Steampunk, Dieselpunk, Atompunk, Art Deco]
+        Context_Process[Handcrafted, Limited Edition, Made-to-Order]
+        Context_Custom[Extensive Customization Options]
+    end
+    
+    %% EXTERNAL INTEGRATIONS
+    subgraph EXT[External Integrations]
+        direction TB
+        HTTP_API[HTTP Request<br/>API Calls]
+        Sheets[Google Sheets<br/>Data Storage]
+        CRM[CRM System<br/>Customer/Orders]
+    end
+    
+    %% CONNECTIONS
+    Master_Agent -.->|tool call<br/>via ToolWorkflow| Agent_Production
+    Master_Agent -.->|tool call<br/>via ToolWorkflow| Agent_Customer
+    Master_Agent -.->|tool call<br/>via ToolWorkflow| Agent_Orders
+    Master_Agent -.->|tool call<br/>via ToolWorkflow| Agent_Supply
+    Master_Agent -.->|tool call<br/>via ToolWorkflow| Agent_Workshop
+    Master_Agent -.->|tool call<br/>via ToolWorkflow| Agent_Sales
+    Master_Agent -.->|tool call<br/>via ToolWorkflow| Agent_Analytics
+    
+    Master_Agent --> Route_Prod
+    Master_Agent --> Route_Cust
+    Master_Agent --> Route_Orders
+    Master_Agent --> Route_Supply
+    Master_Agent --> Route_Workshop
+    Master_Agent --> Route_Sales
+    Master_Agent --> Route_Analytics
+    
+    Route_Prod --> Agent_Production
+    Route_Cust --> Agent_Customer
+    Route_Orders --> Agent_Orders
+    Route_Supply --> Agent_Supply
+    Route_Workshop --> Agent_Workshop
+    Route_Sales --> Agent_Sales
+    Route_Analytics --> Agent_Analytics
+    
+    Agent_Production --> HTTP_API
+    Agent_Production --> Sheets
+    Agent_Customer --> HTTP_API
+    Agent_Customer --> CRM
+    Agent_Orders --> HTTP_API
+    Agent_Orders --> CRM
+    Agent_Supply --> HTTP_API
+    Agent_Supply --> Sheets
+    Agent_Workshop --> HTTP_API
+    Agent_Workshop --> Sheets
+    Agent_Sales --> HTTP_API
+    Agent_Sales --> CRM
+    Agent_Analytics --> HTTP_API
+    Agent_Analytics --> Sheets
+    
+    Context_Style -.-> Master_Agent
+    Context_Process -.-> Master_Agent
+    Context_Custom -.-> Master_Agent
+    
+    %% STYLING
+    classDef master fill:#7c2d12,stroke:#f97316,stroke-width:3px,color:#fff
+    classDef agent fill:#1e3a5f,stroke:#3b82f6,stroke-width:2px,color:#fff
+    classDef routing fill:#4c1d95,stroke:#a855f7,stroke-width:1px,color:#fff,stroke-dasharray: 5 5
+    classDef context fill:#064e3b,stroke:#10b981,stroke-width:1px,color:#fff
+    classDef ext fill:#374151,stroke:#9ca3af,stroke-width:1px,color:#fff
+    
+    class Master_Trigger,Master_Model,Master_Memory,Master_Agent master
+    class Agent_Production,Agent_Customer,Agent_Orders,Agent_Supply,Agent_Workshop,Agent_Sales,Agent_Analytics agent
+    class Route_Prod,Route_Cust,Route_Orders,Route_Supply,Route_Workshop,Route_Sales,Route_Analytics routing
+    class Context_Style,Context_Process,Context_Custom context
+    class HTTP_API,Sheets,CRM ext
+```
+
+---
+
+## Workflow Mapping
+
+| Agent | Workflow File | Domain |
+|-------|---------------|--------|
+| Master Assistant | `showcase/Retrofuture_Master_Assistant.json` | Orchestration / Routing |
+| Artisan Production | `showcase/Retrofuture_Artisan_Production.json` | Production Scheduling |
+| Customer Experience | `showcase/Retrofuture_Customer_Experience.json` | Support / Returns |
+| Custom Orders | `showcase/Retrofuture_Custom_Orders.json` | Order Creation / Pricing |
+| Supply Chain | `showcase/Retrofuture_Supply_Chain.json` | Inventory / Sourcing |
+| Workshop Technical | `showcase/Retrofuture_Workshop_Technical.json` | Equipment / Safety |
+| Sales & Design | `showcase/Retrofuture_Sales_Design.json` | Launches / Partnerships |
+| Order Analytics | `showcase/Retrofuture_Order_Analytics.json` | Metrics / Dashboards |
+
+---
+
+## Routing Rules (from Master Assistant System Message)
+
+| Query Type | Routed To | Keywords |
+|------------|-----------|----------|
+| Production scheduling, artisan assignments, quality control | Artisan Production | scheduling, artisans, quality, workshop, crafting |
+| Customer inquiries, order status, returns, warranty | Customer Experience | customer, order status, return, warranty, support |
+| New custom orders, personalization, design specs, pricing | Custom Orders | custom order, personalize, design, price, quote |
+| Component availability, suppliers, inventory, sourcing | Supply Chain | component, supplier, inventory, material, sourcing |
+| Equipment maintenance, tools, techniques, safety | Workshop Technical | equipment, tool, technique, safety, maintenance |
+| New design launches, limited editions, partnerships | Sales & Design | launch, edition, partnership, wholesale, design |
+| Production metrics, sales reporting, dashboards | Order Analytics | metrics, report, dashboard, analytics, performance |
+
+---
+
+## Key Architectural Patterns
+
+### 1. **Master Orchestrator with ToolWorkflow Delegation**
+- Master agent uses **7 `toolWorkflow` nodes** — each a separate n8n workflow
+- Routing logic defined in Master's system message (not code)
+- Easy to add new agents: import workflow + add toolWorkflow node
+
+### 2. **Domain-Specialized Agents**
+- Each agent has **focused toolset** (HTTP Request + relevant data stores)
+- Shared context via Master's conversation memory
+- Independent scaling: update one agent without affecting others
+
+### 3. **Shared Infrastructure Layer**
+- Common: HTTP Request (external APIs), Google Sheets (operational data)
+- Domain-specific: CRM (customer-facing), Sheets (internal ops)
+- Consistent authentication via n8n credentials
+
+### 4. **Business Context Injection**
+- Company context (aesthetics, process, customization) in Master's system message
+- Propagated to all agents via conversation memory
+- Ensures brand-consistent responses across all domains

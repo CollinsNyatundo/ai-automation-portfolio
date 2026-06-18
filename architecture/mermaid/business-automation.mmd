@@ -1,0 +1,263 @@
+# Business Automation — Architecture
+
+```mermaid
+flowchart TD
+    %% ===== BUSINESS AUTOMATION =====
+    
+    %% LEAD GENERATION OUTREACH
+    subgraph LEAD[Lead Generation Outreach<br/>Lead_Generation_Outreach.json]
+        direction TB
+        Lead_Trigger[Manual / Webhook Trigger<br/>New Lead Input]
+        Lead_Enrich[HTTP Request<br/>Enrichment API<br/>Clearbit / Apollo / Hunter]
+        Lead_AI[AI Sequence Generator<br/>GPT-4.1<br/>Personalized Outreach]
+        Lead_CRM[CRM / Sheets Log<br/>Lead + Sequence + Status]
+        Lead_Send[Send via Email/API<br/>Gmail / SendGrid / Outreach.io]
+        
+        Lead_Trigger --> Lead_Enrich
+        Lead_Enrich --> Lead_AI
+        Lead_AI --> Lead_CRM
+        Lead_AI --> Lead_Send
+    end
+    
+    %% E-COMMERCE INVENTORY
+    subgraph ECOM[E-Commerce Inventory<br/>E_commerce_Inventory.json]
+        direction TB
+        Ecom_Trigger[Schedule / Webhook<br/>Hourly / Daily]
+        Ecom_API[HTTP Request<br/>Shopify / WooCommerce API<br/>Inventory Levels]
+        Ecom_Check[Conditional Check<br/>Stock < Threshold?]
+        Ecom_Alert[Alert Generation<br/>Slack / Email / SMS]
+        Ecom_Reorder[Reorder Automation<br/>Create PO / Notify Supplier]
+        Ecom_Log[Sheets Log<br/>Inventory History + Actions]
+        
+        Ecom_Trigger --> Ecom_API
+        Ecom_API --> Ecom_Check
+        Ecom_Check -->|Yes| Ecom_Alert
+        Ecom_Check -->|Yes| Ecom_Reorder
+        Ecom_Check -->|No| Ecom_Log
+        Ecom_Alert --> Ecom_Log
+        Ecom_Reorder --> Ecom_Log
+    end
+    
+    %% EMAIL MARKETING
+    subgraph EMAIL[Email Marketing<br/>Email_Marketing.json]
+        direction TB
+        Email_Trigger[Schedule / Segment Trigger<br/>Campaign Launch]
+        Email_Segment[Segmentation Logic<br/>Sheets / CRM Query<br/>Behavior + Demographics]
+        Email_AI[AI Personalization<br/>GPT-4.1<br/>Subject + Body + CTA]
+        Email_Send[SendGrid / Mailchimp<br/>Batch Send + Tracking]
+        Email_Analytics[Analytics Log<br/>Open, Click, Convert → Sheets]
+        
+        Email_Trigger --> Email_Segment
+        Email_Segment --> Email_AI
+        Email_AI --> Email_Send
+        Email_Send --> Email_Analytics
+    end
+    
+    %% SHARED INFRASTRUCTURE
+    subgraph INFRA[Business Automation Infrastructure]
+        direction TB
+        Enrichment_API[Enrichment APIs<br/>Clearbit / Apollo / Hunter]
+        Shopify_API[Shopify / WooCommerce API]
+        Gmail_API[Gmail / SendGrid / Mailchimp]
+        Sheets_CRM[Google Sheets / CRM<br/>Airtable / HubSpot]
+        Slack_API[Slack / Teams<br/>Notifications]
+        Twilio_API[Twilio / Email<br/>Alerts]
+        OpenAI_API[OpenAI API<br/>GPT-4.1]
+    end
+    
+    %% CONNECTIONS
+    Lead_Enrich --> Enrichment_API
+    Lead_AI --> OpenAI_API
+    Lead_CRM --> Sheets_CRM
+    Lead_Send --> Gmail_API
+    
+    Ecom_API --> Shopify_API
+    Ecom_Alert --> Slack_API
+    Ecom_Alert --> Twilio_API
+    Ecom_Reorder --> Gmail_API
+    Ecom_Log --> Sheets_CRM
+    
+    Email_Segment --> Sheets_CRM
+    Email_AI --> OpenAI_API
+    Email_Send --> Gmail_API
+    Email_Analytics --> Sheets_CRM
+    
+    %% STYLING
+    classDef lead fill:#1e3a5f,stroke:#3b82f6,stroke-width:2px,color:#fff
+    classDef ecom fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#fff
+    classDef email fill:#7c2d12,stroke:#f97316,stroke-width:2px,color:#fff
+    classDef infra fill:#374151,stroke:#9ca3af,stroke-width:1px,color:#fff
+    
+    class Lead_Trigger,Lead_Enrich,Lead_AI,Lead_CRM,Lead_Send lead
+    class Ecom_Trigger,Ecom_API,Ecom_Check,Ecom_Alert,Ecom_Reorder,Ecom_Log ecom
+    class Email_Trigger,Email_Segment,Email_AI,Email_Send,Email_Analytics email
+    class Enrichment_API,Shopify_API,Gmail_API,Sheets_CRM,Slack_API,Twilio_API,OpenAI_API infra
+```
+
+---
+
+## Workflow Mapping
+
+| Automation | Workflow File | Trigger | Key Integrations |
+|------------|---------------|---------|------------------|
+| Lead Generation | `showcase/Lead_Generation_Outreach.json` | Manual/Webhook | Enrichment API → GPT-4.1 → CRM/Sheets → SendGrid/Gmail |
+| E-Commerce Inventory | `showcase/E_commerce_Inventory.json` | Schedule/Webhook | Shopify/WooCommerce → Slack/Email → Reorder → Sheets |
+| Email Marketing | `showcase/Email_Marketing.json` | Schedule/Segment | CRM/Sheets → GPT-4.1 → SendGrid/Mailchimp → Analytics |
+
+---
+
+## Lead Generation Outreach — Detail
+
+```mermaid
+sequenceDiagram
+    participant Trigger
+    participant Enrich as Enrichment API
+    participant AI as GPT-4.1
+    participant CRM as Sheets/CRM
+    participant Send as SendGrid/Gmail
+    
+    Trigger->>Enrich: {email/domain} → Company, Role, Tech Stack, Size
+    Enrich-->>AI: Enriched Lead Profile
+    AI->>AI: Generate Personalized Sequence (3-5 touches)
+    AI-->>CRM: Log Lead + Sequence + Status="Pending"
+    AI->>Send: Touch 1 (Email/LinkedIn)
+    Send-->>CRM: Update Status="Sent", Track Opens/Clicks
+    Note over CRM: Wait 3 days → Touch 2 → Wait 5 days → Touch 3
+```
+
+### Enrichment Data Points
+| Category | Fields |
+|----------|--------|
+| **Company** | Name, Domain, Industry, Size, Revenue, Location, Tech Stack |
+| **Contact** | Name, Title, Seniority, Department, LinkedIn, Verified Email |
+| **Intent** | Topic Interest, Recent Funding, Hiring, Tech Changes |
+
+### AI Sequence Template
+```json
+{
+  "touches": [
+    {"day": 0, "channel": "email", "template": "value_first"},
+    {"day": 3, "channel": "email", "template": "case_study"},
+    {"day": 8, "channel": "linkedin", "template": "soft_touch"},
+    {"day": 14, "channel": "email", "template": "breakup"}
+  ],
+  "personalization": ["company_name", "role", "pain_point", "competitor_mention"]
+}
+```
+
+---
+
+## E-Commerce Inventory — Detail
+
+```mermaid
+sequenceDiagram
+    participant Cron
+    participant API as Shopify/WooCommerce
+    participant Check as Conditional
+    participant Alert as Slack/Email/SMS
+    participant Reorder as PO/Supplier
+    participant Log as Sheets
+    
+    Cron->>API: GET /inventory?updated_since=1h
+    API-->>Check: Variant Stock Levels
+    Check->>Check: stock < reorder_point?
+    Check-->>Alert: low_stock items → #inventory-alerts
+    Check-->>Reorder: auto-create PO for vendor
+    Check-->>Log: {sku, stock, action, timestamp}
+    Note over Log: Historical trend → demand forecasting
+```
+
+### Inventory Rules
+| Metric | Threshold | Action |
+|--------|-----------|--------|
+| **Stock Level** | < Reorder Point | Alert + Auto-Reorder |
+| **Stock Level** | = 0 | Urgent Alert + Expedite PO |
+| **Velocity** | > 30 days supply | Reduce Reorder Qty |
+| **Velocity** | < 7 days supply | Increase Reorder Qty |
+| **Seasonal** | Known peaks | Pre-load Safety Stock |
+
+---
+
+## Email Marketing — Detail
+
+```mermaid
+sequenceDiagram
+    participant Trigger
+    participant Segment as CRM/Sheets
+    participant AI as GPT-4.1
+    participant Send as SendGrid/Mailchimp
+    participant Analytics as Sheets
+    
+    Trigger->>Segment: Query: active_subscribers + segments
+    Segment-->>AI: {segment, behavior, demographics}
+    AI->>AI: Personalize Subject + Body + CTA per Segment
+    AI-->>Send: Campaign {list, template, variables}
+    Send-->>Analytics: {send_id, delivered, opens, clicks}
+    Note over Analytics: Webhook → Update per-contact metrics
+```
+
+### Segmentation Matrix
+| Segment | Criteria | Personalization |
+|---------|----------|-----------------|
+| **New Subscribers** | < 30 days, no purchase | Welcome series, education |
+| **Active Buyers** | > 1 purchase, < 90 days | Cross-sell, loyalty |
+| **At Risk** | > 90 days, no engagement | Win-back, offer |
+| **VIP** | > 3 purchases OR > $500 LTV | Exclusive, early access |
+| **Cart Abandoners** | Cart value > $50, < 24h | Recovery + incentive |
+
+### AI Personalization Variables
+```json
+{
+  "subject_variables": ["first_name", "last_purchase", "recommended_category"],
+  "body_variables": ["first_name", "loyalty_tier", "product_recommendations", "exclusive_offer"],
+  "cta_variables": ["personalized_link", "discount_code", "expires_date"]
+}
+```
+
+---
+
+## Key Architectural Patterns
+
+### 1. **Enrich → Personalize → Act → Measure Loop**
+| Phase | Tool | Output |
+|-------|------|--------|
+| Enrich | Clearbit/Apollo/Hunter | Company + Contact Intelligence |
+| Personalize | GPT-4.1 | Tailored Message per Segment |
+| Act | SendGrid/Mailchimp/Gmail | Multi-channel Delivery |
+| Measure | Webhooks → Sheets | Opens, Clicks, Conversions, Revenue |
+
+### 2. **Conditional Automation with Human Escalation**
+- Inventory: Auto-reorder < threshold → Human approval > $10K
+- Lead Gen: Auto-sequence → Human takeover on reply
+- Email: Auto-send → Human review for VIP segments
+
+### 3. **Sheets as Operational Database**
+| Use Case | Why Sheets |
+|----------|------------|
+| Lead Log | Non-technical team can view/edit |
+| Inventory History | Timestamped, filterable, chartable |
+| Email Analytics | Pivot tables for cohort analysis |
+| Campaign Tracking | UTM + Revenue attribution |
+
+### 4. **API-First Integration Pattern**
+| System | Integration Method | Fallback |
+|--------|-------------------|----------|
+| **CRM** | Native n8n nodes (HubSpot, Salesforce) | Sheets |
+| **E-Commerce** | Shopify/WooCommerce API | CSV Export → Sheets |
+| **Email** | SendGrid/Mailchimp nodes | Gmail SMTP |
+| **Enrichment** | HTTP Request → Clearbit/Apollo | Manual CSV upload |
+| **Notifications** | Slack/Teams/Webhook nodes | Email/Telegram |
+
+---
+
+## Scaling Business Automation
+
+| Dimension | Current | Scaling Path |
+|-----------|---------|--------------|
+| **Leads/Month** | ~500 | Batch enrichment, parallel AI sequences |
+| **SKUs Monitored** | ~200 | Incremental sync, change detection |
+| **Email Volume** | ~10K/mo | SendGrid dedicated IP, reputation mgmt |
+| **Segments** | 5-7 | ML-based clustering (RFM, behavioral) |
+| **Channels** | Email + Slack | SMS, WhatsApp, Push, In-App |
+| **Attribution** | Last-click | Multi-touch (UTM + CRM + GA) |
+| **Testing** | Manual A/B | Automated multi-arm bandit |

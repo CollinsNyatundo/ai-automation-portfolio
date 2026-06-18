@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RAG Pipeline Infrastructure</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'JetBrains Mono', monospace; background: #020617; color: #e2e8f0; min-height: 100vh; padding: 40px; }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .header { text-align: center; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 1px solid #1e293b; }
+    .header h1 { font-size: 28px; font-weight: 500; color: #f8fafc; margin-bottom: 8px; }
+    .header .subtitle { color: #94a3b8; font-size: 14px; }
+    .header .pulse { display: inline-block; width: 10px; height: 10px; background: #a78bfa; border-radius: 50%; margin-right: 10px; animation: pulse 2s infinite; vertical-align: middle; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 40px; }
+    .card { background: rgba(15, 23, 42, 0.8); border: 1px solid #1e293b; border-radius: 12px; padding: 24px; }
+    .card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+    .card-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .card-dot.violet { background: #a78bfa; } .card-dot.emerald { background: #34d399; }
+    .card-dot.cyan { background: #22d3ee; } .card-dot.amber { background: #fbbf24; }
+    .card h3 { font-size: 16px; font-weight: 500; color: #f8fafc; }
+    .card ul { list-style: none; }
+    .card li { color: #cbd5e1; font-size: 13px; padding: 6px 0; border-bottom: 1px solid rgba(30, 41, 59, 0.5); padding-left: 16px; position: relative; }
+    .card li:last-child { border-bottom: none; }
+    .card li::before { content: "•"; position: absolute; left: 0; color: #64748b; }
+    .svg-container { background: #020617; border: 1px solid #1e293b; border-radius: 12px; overflow: hidden; margin-top: 20px; }
+    svg { display: block; }
+    .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #1e293b; color: #64748b; font-size: 12px; }
+    .namespace-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 20px; }
+    .namespace-card { background: rgba(15, 23, 42, 0.8); border: 1px solid #1e293b; border-radius: 12px; padding: 20px; text-align: center; }
+    .namespace-card h4 { color: #a78bfa; font-size: 14px; margin-bottom: 8px; }
+    .namespace-card p { color: #94a3b8; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1><span class="pulse"></span>RAG Pipeline Infrastructure</h1>
+      <p class="subtitle">Ingestion → Pinecone (3 Namespaces) → 3 Retrieval Interfaces • RAG-as-a-Tool Pattern</p>
+    </div>
+
+    <div class="namespace-grid">
+      <div class="namespace-card">
+        <h4>📊 marketing</h4>
+        <p>Campaigns, blogs, brand guidelines, competitive intel</p>
+      </div>
+      <div class="namespace-card">
+        <h4>📁 projects</h4>
+        <p>Technical specs, API docs, architecture decisions, project plans</p>
+      </div>
+      <div class="namespace-card">
+        <h4>❓ faq</h4>
+        <p>Internal policies, SOPs, HR, troubleshooting guides</p>
+      </div>
+    </div>
+
+    <div class="svg-container" style="margin-top: 20px;">
+      <svg width="100%" viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+          </pattern>
+          <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5"
+                  markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke"
+                  stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+        <rect width="1000" height="600" fill="url(#grid)"/>
+
+        <!-- INGESTION PIPELINE (Left) -->
+        <g class="ingestion">
+          <rect x="40" y="40" width="300" height="420" rx="12" fill="rgba(8, 51, 68, 0.3)" stroke="#22d3ee" stroke-width="1.5" stroke-dasharray="8,4"/>
+          <rect x="40" y="40" width="300" height="420" rx="12" fill="#0f172a"/>
+          <text x="190" y="65" class="th" text-anchor="middle" fill="#22d3ee">Ingestion Pipeline</text>
+          <text x="190" y="85" class="ts" text-anchor="middle" fill="#94a3b8">Data_to_Pinecone.json</text>
+
+          <g transform="translate(60, 120)">
+            <!-- Trigger -->
+            <rect x="0" y="0" width="220" height="50" rx="6" fill="rgba(255,255,255,0.05)" stroke="#22d3ee" stroke-width="1.5"/>
+            <rect x="0" y="0" width="220" height="50" rx="6" fill="#0f172a"/>
+            <text x="110" y="30" class="ts" text-anchor="middle" fill="#22d3ee">Manual Trigger / Cron</text>
+            <line x1="110" y1="50" x2="110" y2="70" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arrow)"/>
+          </g>
+
+          <g transform="translate(60, 190)">
+            <rect x="0" y="0" width="220" height="50" rx="6" fill="rgba(52,211,153,0.2)" stroke="#34d399" stroke-width="1.5"/>
+            <rect x="0" y="0" width="220" height="50" rx="6" fill="#0f172a"/>
+            <text x="110" y="30" class="ts" text-anchor="middle" fill="#34d399">Google Drive → Extract</text>
+            <line x1="110" y1="50" x2="110" y2="70" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrow)"/>
+          </g>
+
+          <g transform="translate(60, 260)">
+            <rect x="0" y="0" width="220" height="50" rx="6" fill="rgba(167,139,250,0.2)" stroke="#a78bfa" stroke-width="1.5"/>
+            <rect x="0" y="0" width="220" height="50" rx="6" fill="#0f172a"/>
+            <text x="110" y="30" class="ts" text-anchor="middle" fill="#a78bfa">Recursive Splitter</text>
+            <text x="110" y="46" class="ts" text-anchor="middle" fill="#94a3b8">Chunk ~500-1000 tokens</text>
+            <line x1="110" y1="60" x2="110" y2="70" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrow)"/>
+          </g>
+
+          <g transform="translate(60, 330)">
+            <rect x="0" y="0" width="220" height="50" rx="6" fill="rgba(251,146,60,0.2)" stroke="#fb923c" stroke-width="1.5"/>
+            <rect x="0" y="0" width="220" height="50" rx="6" fill="#0f172a"/>
+            <text x="110" y="30" class="ts" text-anchor="middle" fill="#fb923c">OpenAI Embeddings</text>
+            <text x="110" y="46" class="ts" text-anchor="middle" fill="#94a3b8">text-embedding-3-small</text>
+            <line x1="110" y1="60" x2="110" y2="70" stroke="#fb923c" stroke-width="1.5" marker-end="url(#arrow)"/>
+          </g>
+
+          <g transform="translate(60, 400)">
+            <rect x="0" y="0" width="220" height="50" rx="6" fill="rgba(167,139,250,0.4)" stroke="#a78bfa" stroke-width="2"/>
+            <rect x="0" y="0" width="220" height="50" rx="6" fill="#0f172a"/>
+            <text x="110" y="30" class="th" fill="#a78bfa">Pinecone Upsert</text>
+            <text x="110" y="52" class="ts" fill="#94a3b8">3 Namespaces</text>
+          </g>
+        </g>
+
+        <!-- PINECONE CENTER -->
+        <g class="pinecone">
+          <rect x="380" y="40" width="240" height="300" rx="12" fill="rgba(167, 139, 250, 0.4)" stroke="#a78bfa" stroke-width="2"/>
+          <rect x="380" y="40" width="240" height="300" rx="12" fill="#0f172a"/>
+          <text x="500" y="65" class="th" text-anchor="middle" fill="#a78bfa">Pinecone Vector DB</text>
+          <text x="500" y="85" class="ts" text-anchor="middle" fill="#94a3b8">Index: semantic-search</text>
+
+          <!-- Namespaces -->
+          <g transform="translate(400, 130)">
+            <rect x="0" y="0" width="200" height="60" rx="8" fill="rgba(167,139,250,0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+            <rect x="0" y="0" width="200" height="60" rx="8" fill="#0f172a"/>
+            <text x="100" y="28" class="th" text-anchor="middle" fill="#a78bfa">marketing</text>
+            <text x="100" y="48" class="ts" text-anchor="middle" fill="#94a3b8">Campaigns, blogs, brand</text>
+          </g>
+
+          <g transform="translate(400, 210)">
+            <rect x="0" y="0" width="200" height="60" rx="8" fill="rgba(167,139,250,0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+            <rect x="0" y="0" width="200" height="60" rx="8" fill="#0f172a"/>
+            <text x="100" y="28" class="th" text-anchor="middle" fill="#a78bfa">projects</text>
+            <text x="100" y="48" class="ts" text-anchor="middle" fill="#94a3b8">Specs, APIs, arch decisions</text>
+          </g>
+
+          <g transform="translate(400, 290)">
+            <rect x="0" y="0" width="200" height="60" rx="8" fill="rgba(167,139,250,0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+            <rect x="0" y="0" width="200" height="60" rx="8" fill="#0f172a"/>
+            <text x="100" y="28" class="th" text-anchor="middle" fill="#a78bfa">faq</text>
+            <text x="100" y="48" class="ts" text-anchor="middle" fill="#94a3b8">Policies, SOPs, HR</text>
+          </g>
+        </g>
+
+        <!-- RETRIEVAL INTERFACES (Right) -->
+        <g class="interfaces">
+          <text x="680" y="40" class="th" fill="#22d3ee">Retrieval Interfaces</text>
+
+          <!-- Voice RAG Agent -->
+          <g transform="translate(640, 80)">
+            <rect x="0" y="0" width="300" height="100" rx="8" fill="rgba(165,216,250,0.3)" stroke="#22d3ee" stroke-width="1.5"/>
+            <rect x="0" y="0" width="300" height="100" rx="8" fill="#0f172a"/>
+            <text x="150" y="25" class="th" text-anchor="middle" fill="#22d3ee">Voice RAG Agent</text>
+            <text x="150" y="50" class="ts" text-anchor="middle" fill="#94a3b8">Webhook POST → Agent → VectorStoreTool</text>
+            <text x="150" y="70" class="ts" text-anchor="middle" fill="#94a3b8">Namespace: projects</text>
+            <text x="150" y="90" class="ts" text-anchor="middle" fill="#22d3ee">Voice_RAG_Agent.json</text>
+          </g>
+
+          <!-- Chatbot RAG -->
+          <g transform="translate(640, 200)">
+            <rect x="0" y="0" width="300" height="100" rx="8" fill="rgba(52,211,153,0.2)" stroke="#34d399" stroke-width="1.5"/>
+            <rect x="0" y="0" width="300" height="100" rx="8" fill="#0f172a"/>
+            <text x="150" y="25" class="th" text-anchor="middle" fill="#34d399">Chatbot RAG</text>
+            <text x="150" y="50" class="ts" text-anchor="middle" fill="#94a3b8">Chat Trigger → Agent → VectorStoreTool</text>
+            <text x="150" y="70" class="ts" text-anchor="middle" fill="#94a3b8">Namespace: projects</text>
+            <text x="150" y="90" class="ts" text-anchor="middle" fill="#34d399">RAG_Pipeline___Chatbot.json</text>
+          </g>
+
+          <!-- Think Agents RAG Tool -->
+          <g transform="translate(640, 320)">
+            <rect x="0" y="0" width="300" height="100" rx="8" fill="rgba(167,139,250,0.3)" stroke="#a78bfa" stroke-width="1.5"/>
+            <rect x="0" y="0" width="300" height="100" rx="8" fill="#0f172a"/>
+            <text x="150" y="25" class="th" text-anchor="middle" fill="#a78bfa">Think Agents RAG Tool</text>
+            <text x="150" y="50" class="ts" text-anchor="middle" fill="#94a3b8">1 of 7 Tools: VectorStoreTool</text>
+            <text x="150" y="70" class="ts" text-anchor="middle" fill="#94a3b8">Namespace: faq</text>
+            <text x="150" y="90" class="ts" text-anchor="middle" fill="#a78bfa">Think_Agents.json</text>
+          </g>
+
+          <!-- Connections from Pinecone to each interface -->
+          <line x1="620" y1="220" x2="640" y2="130" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arrow)"/>
+          <line x1="620" y1="220" x2="640" y2="250" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrow)"/>
+          <line x1="620" y1="220" x2="640" y2="370" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+          <!-- Embedding Model -->
+          <g transform="translate(640, 440)">
+            <rect x="0" y="0" width="300" height="60" rx="8" fill="rgba(251,146,60,0.2)" stroke="#fb923c" stroke-width="1.5"/>
+            <rect x="0" y="0" width="300" height="60" rx="8" fill="#0f172a"/>
+            <text x="150" y="30" class="th" text-anchor="middle" fill="#fb923c">OpenAI Embeddings</text>
+            <text x="150" y="50" class="ts" text-anchor="middle" fill="#94a3b8">text-embedding-3-small (Ingestion + Query)</text>
+          </g>
+        </g>
+
+        <!-- Ingestion Flow Arrow -->
+        <line x1="340" y1="270" x2="380" y2="220" stroke="#a78bfa" stroke-width="2" marker-end="url(#arrow)"/>
+        <text x="360" y="200" class="ts" fill="#a78bfa">Upsert</text>
+
+        <!-- Boundary & Legend -->
+        <rect x="40" y="40" width="300" height="480" rx="12" fill="none" stroke="#22d3ee" stroke-width="1.5" stroke-dasharray="8,4"/>
+        <text x="190" y="25" class="th" fill="#22d3ee">Ingestion (Offline/Batch)</text>
+
+        <rect x="380" y="40" width="240" height="300" rx="12" fill="none" stroke="#a78bfa" stroke-width="2" stroke-dasharray="8,4"/>
+        <text x="500" y="25" class="th" fill="#a78bfa">Pinecone (Shared State)</text>
+
+        <rect x="640" y="40" width="300" height="520" rx="12" fill="none" stroke="#22d3ee" stroke-width="1.5" stroke-dasharray="8,4"/>
+        <text x="790" y="25" class="th" fill="#22d3ee">Retrieval (Online/Query)</text>
+
+        <!-- Data Flow Annotation -->
+        <g transform="translate(40, 520)">
+          <rect x="0" y="0" width="920" height="60" rx="8" fill="rgba(34,211,238,0.1)" stroke="#22d3ee" stroke-width="1.5"/>
+          <text x="460" y="22" class="th" text-anchor="middle" fill="#22d3ee">🔄 Data Flow:  Ingest (scheduled/manual) → Pinecone → 3 Interfaces query independently via VectorStoreTool</text>
+        </g>
+
+        <!-- Legend -->
+        <g transform="translate(40, 550)">
+          <rect x="0" y="0" width="100" height="30" rx="6" fill="rgba(167,139,250,0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+          <text x="110" y="22" class="ts" fill="#a78bfa">Pinecone (Vector DB)</text>
+          <rect x="250" y="0" width="140" height="30" rx="6" fill="rgba(165,216,250,0.3)" stroke="#22d3ee" stroke-width="1.5"/>
+          <text x="390" y="22" class="ts" fill="#22d3ee">Voice/Webhook Interface</text>
+          <rect x="550" y="0" width="140" height="30" rx="6" fill="rgba(52,211,153,0.2)" stroke="#34d399" stroke-width="1.5"/>
+          <text x="690" y="22" class="ts" fill="#34d399">Chat Interface</text>
+          <rect x="800" y="0" width="180" height="30" rx="6" fill="rgba(167,139,250,0.3)" stroke="#a78bfa" stroke-width="1.5"/>
+          <text x="980" y="22" class="ts" fill="#a78bfa">Think Agent Tool</text>
+        </g>
+      </svg>
+    </div>
+
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-header"><div class="card-dot violet"></div><h3>Pinecone Vector DB</h3></div>
+        <ul>
+          <li>Index: semantic-search</li>
+          <li>3 Namespaces: marketing, projects, faq</li>
+          <li>Shared across all interfaces</li>
+          <li>Embedding: text-embedding-3-small</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-dot cyan"></div><h3>Voice RAG Agent</h3></div>
+        <ul>
+          <li>Webhook: POST /voice-rag</li>
+          <li>Agent + VectorStoreTool</li>
+          <li>Namespace: projects</li>
+          <li>Workflow: Voice_RAG_Agent.json</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-dot emerald"></div><h3>Chatbot RAG</h3></div>
+        <ul>
+          <li>Chat Trigger interface</li>
+          <li>Agent + VectorStoreTool</li>
+          <li>Namespace: projects</li>
+          <li>Workflow: RAG_Pipeline___Chatbot.json</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-dot violet"></div><h3>Think Agent Tool</h3></div>
+        <ul>
+          <li>1 of 7 tools in Think_Agents</li>
+          <li>Namespace: faq</li>
+          <li>Internal knowledge lookup</li>
+          <li>Workflow: Think_Agents.json</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer">
+      RAG Pipeline Infrastructure — Ingestion → Pinecone (3 Namespaces) → 3 Retrieval Interfaces
+    </div>
+  </div>
+</body>
+</html>

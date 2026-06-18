@@ -1,0 +1,219 @@
+# Reporting & Analytics — Architecture
+
+```mermaid
+flowchart TD
+    %% ===== REPORTING & ANALYTICS =====
+    
+    %% DAILY ANALYTICS REPORTING
+    subgraph DAILY[Daily Analytics Reporting<br/>Analytics_Reporting.json]
+        direction TB
+        Daily_Cron[Daily Cron<br/>6:00 AM]
+        Daily_GA[Google Analytics<br/>Sessions, Users, Date]
+        Daily_AI[AI Summary Generator<br/>GPT-3.5-turbo]
+        Daily_Email[Email Delivery<br/>Team Distribution]
+        
+        Daily_Cron --> Daily_GA
+        Daily_GA --> Daily_AI
+        Daily_AI --> Daily_Email
+    end
+    
+    %% FEATURE ENGINEERING ADVISOR
+    subgraph FEATURE[Feature Engineering Advisor<br/>Feature_Engineering_n8n.json]
+        direction TB
+        Feat_Trigger[Manual Trigger]
+        Feat_HTTP[HTTP Request<br/>CSV Dataset from GitHub]
+        Feat_Code[Code Node<br/>Statistical Analysis<br/>Column types, missing values, cardinality]
+        Feat_LLM[LLM Chain<br/>GPT-4.1-mini<br/>Feature Engineering Strategy]
+        Feat_HTML[HTML Output<br/>Styled Report]
+        
+        Feat_Trigger --> Feat_HTTP
+        Feat_HTTP --> Feat_Code
+        Feat_Code --> Feat_LLM
+        Feat_LLM --> Feat_HTML
+    end
+    
+    %% SHARED INFRASTRUCTURE
+    subgraph INFRA[Analytics Infrastructure]
+        direction TB
+        GA_API[Google Analytics API<br/>Reporting v4]
+        SMTP[SMTP / Email Server]
+        OpenAI_API[OpenAI API<br/>GPT-3.5-turbo / GPT-4.1-mini]
+        GitHub_Raw[GitHub Raw Content<br/>Sample Datasets]
+    end
+    
+    %% CONNECTIONS
+    Daily_GA --> GA_API
+    Daily_AI --> OpenAI_API
+    Daily_Email --> SMTP
+    
+    Feat_HTTP --> GitHub_Raw
+    Feat_Code --> OpenAI_API
+    Feat_LLM --> OpenAI_API
+    
+    %% DATA FLOW ANNOTATIONS
+    Daily_Flow[Daily: GA → AI Summary → Email] -.-> Daily_Cron
+    Feat_Flow[On-Demand: CSV → Analysis → LLM Strategy → HTML Report] -.-> Feat_Trigger
+    
+    %% STYLING
+    classDef scheduled fill:#1e3a5f,stroke:#3b82f6,stroke-width:2px,color:#fff
+    classDef ondemand fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#fff
+    classDef infra fill:#374151,stroke:#9ca3af,stroke-width:1px,color:#fff
+    classDef flow fill:#7c2d12,stroke:#f97316,stroke-width:1px,color:#fff,stroke-dasharray: 5 5
+    
+    class Daily_Cron,Daily_GA,Daily_AI,Daily_Email scheduled
+    class Feat_Trigger,Feat_HTTP,Feat_Code,Feat_LLM,Feat_HTML ondemand
+    class GA_API,SMTP,OpenAI_API,GitHub_Raw infra
+    class Daily_Flow,Feat_Flow flow
+```
+
+---
+
+## Workflow Mapping
+
+| Report | Workflow File | Trigger | Output |
+|--------|---------------|---------|--------|
+| Daily Analytics | `showcase/Analytics_Reporting.json` | Daily Cron (6AM) | Email Summary |
+| Feature Engineering | `showcase/Feature_Engineering_n8n.json` | Manual | HTML Report |
+
+---
+
+## Daily Analytics Reporting — Detail
+
+```mermaid
+sequenceDiagram
+    participant Cron
+    participant GA as Google Analytics
+    participant AI as GPT-3.5-turbo
+    participant Email as SMTP
+    
+    Cron->>GA: Query: Sessions, Users by Date (Last 24h)
+    GA-->>Cron: JSON Metrics
+    Cron->>AI: "Summarize this GA report: {metrics}"
+    AI-->>Cron: 3-Bullet Executive Summary
+    Cron->>Email: Send to team@company.com
+    Email-->>Team: "Daily Website Performance Summary"
+```
+
+### GA Query Configuration
+```json
+{
+  "viewId": "UA-XXXXXX-Y",
+  "metrics": ["ga:sessions", "ga:users", "ga:pageviews", "ga:bounceRate"],
+  "dimensions": ["ga:date", "ga:sourceMedium", "ga:deviceCategory"],
+  "dateRange": "yesterday"
+}
+```
+
+### AI Prompt Template
+```
+Summarize this Google Analytics report for a non-technical executive audience. 
+Focus on: 
+1. Key metric changes vs. previous period
+2. Top traffic sources 
+3. Anomalies or notable patterns
+4. One actionable recommendation
+Output: 3 bullet points max.
+```
+
+---
+
+## Feature Engineering Advisor — Detail
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant HTTP as HTTP Request
+    participant Code as Code Node (Analysis)
+    participant LLM as GPT-4.1-mini
+    participant HTML as HTML Output
+    
+    User->>HTTP: Trigger with CSV URL
+    HTTP-->>Code: Raw CSV Data
+    Code->>Code: Parse CSV, detect column types, compute stats
+    Code-->>LLM: Dataset Summary + Column Analysis
+    LLM->>LLM: Generate Feature Engineering Strategy
+    LLM-->>HTML: Styled Recommendations
+    HTML-->>User: Visual Report
+```
+
+### Code Node Analysis Output
+```json
+{
+  "dataset_summary": {
+    "total_rows": 1000,
+    "total_columns": 10,
+    "missing_percentage": 5.2
+  },
+  "feature_engineering_context": {
+    "numeric_columns": ["height", "weight", "age"],
+    "categorical_columns": ["gender", "city", "occupation"],
+    "high_cardinality_categorical": ["city", "occupation"],
+    "datetime_columns": ["created_at"],
+    "target_candidates": ["income", "churn"]
+  },
+  "data_quality": {
+    "total_missing_values": 520,
+    "columns_with_missing": ["occupation", "income"],
+    "duplicate_rows": 3
+  }
+}
+```
+
+### LLM Prompt Focus Areas
+| Category | Focus |
+|----------|-------|
+| **Business Logic** | Why each feature adds value |
+| **Data Relationships** | Cross-column combinations, ratios, interactions |
+| **Domain Insights** | Context-specific patterns (healthcare, finance, retail) |
+| **Modeling Impact** | Predictive power, leakage prevention, interpretability |
+| **Implementation** | SQL/Python/pandas agnostic concepts |
+
+---
+
+## Key Architectural Patterns
+
+### 1. **Scheduled + On-Demand Hybrid**
+| Type | Use Case | Trigger |
+|------|----------|---------|
+| **Scheduled** | Daily ops monitoring | Cron (time-based) |
+| **On-Demand** | Exploratory analysis | Manual / Webhook |
+| **Event-Driven** | Threshold alerts | Webhook + Conditional |
+
+### 2. **AI as Analyst, Not Just Generator**
+- **Daily Analytics**: AI summarizes → human decides
+- **Feature Engineering**: AI strategizes → human implements
+- **Human-in-the-loop** by design
+
+### 3. **Structured Data → AI → Structured Output**
+```
+Raw Data (CSV/GA JSON)
+       ↓
+Code Node (Statistical Analysis)
+       ↓
+Structured Context → LLM
+       ↓
+Structured Recommendations (HTML/JSON)
+```
+
+### 4. **Configurable Metrics & Dimensions**
+```json
+// Easy to modify without code changes
+{
+  "metrics": ["ga:sessions", "ga:users", "ga:conversions"],
+  "dimensions": ["ga:date", "ga:sourceMedium", "ga:landingPagePath"],
+  "filters": "ga:country==United States"
+}
+```
+
+---
+
+## Extending the Analytics Stack
+
+| Need | Current | Extension Path |
+|------|---------|----------------|
+| **Real-time Dashboards** | Daily email | Add Superset / Grafana → Query GA/Postgres |
+| **Anomaly Detection** | Manual review | Add statistical anomaly detection in Code Node |
+| **Multi-Source** | GA only | Add Search Console, Ads, CRM data |
+| **Team Customization** | Single email | Per-role summaries (exec vs. marketing vs. dev) |
+| **Historical Trends** | Daily snapshot | Store in Postgres → Trend analysis workflow |
+| **Cost Attribution** | Not tracked | Join with ad spend data → ROAS calculation |

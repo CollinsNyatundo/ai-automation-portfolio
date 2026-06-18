@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Evaluator-Optimizer — Automated Quality Gate Loop</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: 'JetBrains Mono', monospace; 
+      background: #fffffe; 
+      min-height: 100vh; 
+      display: flex; 
+      justify-content: center; 
+      padding: 40px 20px; 
+    }
+    @media (prefers-color-scheme: dark) {
+      body { background: #020617; }
+      .box { fill: #1e293b; stroke: #334155; }
+      .box.c-purple { fill: #4c1d95; stroke: #7c3aed; }
+      .box.c-teal { fill: #134e4a; stroke: #0f766e; }
+      .box.c-coral { fill: #7c2d12; stroke: #ea580c; }
+      .box.c-gray { fill: #1e293b; stroke: #475569; }
+      .box.c-amber { fill: #7c3aed; stroke: #a78bfa; }
+      .arr, .leader { stroke: #334155; }
+      .th, .ts, .t { fill: #f8fafc; }
+      .c-purple { stroke: #a78bfa; }
+      .c-teal { stroke: #0f766e; }
+      .c-coral { stroke: #ea580c; }
+      .c-gray { stroke: #64748b; }
+      .c-amber { stroke: #a78bfa; }
+      .container { stroke: none; }
+      .title { fill: #f8fafc; }
+      .subtitle { fill: #94a3b8; }
+    }
+    .diagram-container { max-width: 720px; width: 100%; }
+  </style>
+</head>
+<body>
+  <div class="diagram-container">
+    <svg width="680" viewBox="0 0 680 600" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5"
+                markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke"
+                stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+      </defs>
+
+      <text x="340" y="30" class="title th" text-anchor="middle" font-size="18" font-weight="500">Evaluator-Optimizer — Automated Quality Gate Loop</text>
+      <text x="340" y="50" class="subtitle ts" text-anchor="middle" font-size="12">Generator → Evaluator (criteria) → Optimizer → Loop until "Finished" • Zero manual review</text>
+
+      <!-- START -->
+      <g class="container c-gray" transform="translate(270, 40)">
+        <ellipse cx="50" cy="20" rx="50" ry="20" stroke-width="0.5"/>
+        <text class="th" x="50" y="24" text-anchor="middle" dominant-baseline="central">Start</text>
+        <text class="ts" x="50" y="40" text-anchor="middle" dominant-baseline="central">Input: Topic + Requirements</text>
+      </g>
+
+      <!-- GENERATOR -->
+      <g class="container c-purple" transform="translate(120, 120)">
+        <rect x="0" y="0" width="220" height="100" rx="8" stroke-width="0.5"/>
+        <text class="th" x="110" y="20" text-anchor="middle">🏭 Generator Agent</text>
+        <text class="ts" x="110" y="40" text-anchor="middle">GPT-4o-mini</text>
+        <text class="t" x="110" y="60" text-anchor="middle">
+          <tspan x="110" dy="0">Creates initial content</tspan>
+          <tspan x="110" dy="16">(bio, article, post, code)</tspan>
+        </text>
+        <text class="ts" x="110" y="85" text-anchor="middle">Output: Draft content</text>
+      </g>
+
+      <line x1="340" y1="170" x2="420" y2="170" class="arr" marker-end="url(#arrow)" stroke-width="2"/>
+
+      <!-- EVALUATOR -->
+      <g class="container c-amber" transform="translate(460, 120)">
+        <rect x="0" y="0" width="220" height="140" rx="8" stroke-width="0.5"/>
+        <text class="th" x="110" y="20" text-anchor="middle">🧐 Evaluator Agent</text>
+        <text class="ts" x="110" y="38" text-anchor="middle">GPT-4o-mini</text>
+        <text class="t" x="110" y="56" text-anchor="middle">
+          <tspan x="110" dy="0">Evaluates against explicit criteria:</tspan>
+        </text>
+        <text class="t" x="110" y="74" text-anchor="middle">
+          <tspan x="110" dy="0">✓ Quote included (required)</tspan>
+          <tspan x="110" dy="16">✓ Light & humorous tone</tspan>
+          <tspan x="110" dy="16">✗ Zero emojis</tspan>
+        </text>
+        <text class="ts" x="110" y="122" text-anchor="middle">
+          Output: Feedback OR "Finished"
+        </text>
+      </g>
+
+      <line x1="680" y1="190" x2="760" y2="190" class="arr" marker-end="url(#arrow)" stroke-width="2"/>
+      <text x="710" y="185" class="ts" font-size="10" fill="#fbbf24">Yes / "Finished"</text>
+
+      <line x1="680" y1="240" x2="760" y2="240" class="arr" marker-end="url(#arrow)" stroke="#ef4444" stroke-width="2" stroke-dasharray="4,4"/>
+      <text x="710" y="235" class="ts" font-size="10" fill="#ef4444">No → Feedback</text>
+
+      <!-- DECISION -->
+      <g class="container c-coral" transform="translate(780, 120)">
+        <polygon points="110,0 220,50 110,100 0,50" stroke-width="0.5"/>
+        <text class="th" x="110" y="52" text-anchor="middle" dominant-baseline="central">Finished?</text>
+      </g>
+
+      <!-- OPTIMIZER -->
+      <g class="container c-teal" transform="translate(460, 320)">
+        <rect x="0" y="0" width="220" height="120" rx="8" stroke-width="0.5"/>
+        <text class="th" x="110" y="20" text-anchor="middle">🔧 Optimizer Agent</text>
+        <text class="ts" x="110" y="38" text-anchor="middle">GPT-4o-mini / DeepSeek R1</text>
+        <text class="t" x="110" y="56" text-anchor="middle">
+          <tspan x="110" dy="0">Takes draft + feedback</tspan>
+          <tspan x="110" dy="16">Revises to meet criteria</tspan>
+          <tspan x="110" dy="16">Returns improved version</tspan>
+        </text>
+        <text class="ts" x="110" y="98" text-anchor="middle">Output: Improved draft</text>
+      </g>
+
+      <!-- LOOP BACK -->
+      <line x1="460" y1="380" x2="380" y2="380" class="arr" marker-end="url(#arrow)" stroke="#a78bfa" stroke-width="2" stroke-dasharray="6,4"/>
+      <line x1="340" y1="380" x2="260" y2="380" class="arr" marker-end="url(#arrow)" stroke="#a78bfa" stroke-width="2" stroke-dasharray="6,4"/>
+      <text x="330" y="375" class="ts" font-size="10" fill="#a78bfa">Loop</text>
+
+      <line x1="260" y1="380" x2="260" y2="440" class="arr" marker-end="url(#arrow)" stroke="#a78bfa" stroke-width="2" stroke-dasharray="6,4"/>
+      <text x="255" y="410" class="ts" font-size="10" fill="#a78bfa">Loop</text>
+
+      <!-- OUTPUT / GOOGLE DOCS -->
+      <g class="container c-teal" transform="translate(820, 120)">
+        <rect x="0" y="0" width="180" height="100" rx="8" stroke-width="0.5"/>
+        <rect x="0" y="0" width="180" height="100" rx="8" fill="#0f172a" stroke="#22c55e" stroke-width="3"/>
+        <text class="th" x="90" y="20" text-anchor="middle">✓ Quality Passed</text>
+        <text class="ts" x="90" y="40" text-anchor="middle">Push to Google Docs</text>
+        <text class="ts" x="90" y="60" text-anchor="middle">Audit Trail Complete</text>
+        <text class="ts" x="90" y="80" text-anchor="middle">Zero Manual Review</text>
+      </g>
+
+      <!-- CRITERIA BOX -->
+      <g transform="translate(40, 480)">
+        <text class="th" x="0" y="0">Evaluator Criteria (Configurable — Extend for Your Domain)</text>
+      </g>
+
+      <g transform="translate(40, 510)">
+        <g class="container c-gray" transform="translate(0, 0)">
+          <rect x="0" y="0" width="300" height="100" rx="8" stroke-width="0.5" stroke-dasharray="4,2"/>
+          <text class="th" x="150" y="20" text-anchor="middle">📋 Default Criteria (Biography Example)</text>
+          <text class="t" x="20" y="44">1. Must include a quote from the person</text>
+          <text class="t" x="20" y="64">   (favorite saying, piece of advice, motto)</text>
+          <text class="t" x="20" y="84">2. Tone must be light and humorous</text>
+          <text class="t" x="180" y="44">3. Zero emojis allowed</text>
+          <text class="t" x="180" y="64">   (strip 🎉 😀 💡 etc.)</text>
+          <text class="t" x="180" y="84">4. [Extensible: Add your rules]</text>
+        </g>
+
+        <g transform="translate(340, 0)">
+          <text class="th" x="0" y="20">🔧 Your Domain → Your Criteria</text>
+          <text class="t" x="0" y="44">• Code: compiles, passes tests, follows style</text>
+          <text class="t" x="0" y="64">  • Marketing: hook, CTA, brand voice, compliance</text>
+          <text class="t" x="0" y="84">  • Support: empathy, resolution, tone, no PII</text>
+          <text class="t" x="0" y="104">  • Legal: citations, jurisdiction, disclaimers</text>
+        </g>
+      </g>
+
+      <!-- SEQUENCE / FLOW -->
+      <g transform="translate(40, 560)">
+        <text class="th" x="0" y="0">Loop Flow</text>
+      </g>
+
+      <g transform="translate(40, 585)">
+        <g class="container c-purple" transform="translate(0, 0)">
+          <rect x="0" y="0" width="150" height="50" rx="6" stroke-width="0.5"/>
+          <text class="ts" x="75" y="28" text-anchor="middle">1. Generate</text>
+        </g>
+        <line x1="150" y1="25" x2="180" y2="25" class="arr" marker-end="url(#arrow)" stroke-width="1.5"/>
+        <g class="container c-amber" transform="translate(180, 0)">
+          <rect x="0" y="0" width="150" y="50" rx="6" stroke-width="0.5"/>
+          <text class="ts" x="75" y="28" text-anchor="middle">2. Evaluate</text>
+        </g>
+        <line x1="330" y1="25" x2="360" y2="25" class="arr" marker-end="url(#arrow)" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="4,4"/>
+        <text x="450" y="28" class="ts" font-size="10" fill="#ef4444">No → Feedback</text>
+        <g class="container c-teal" transform="translate(480, 0)">
+          <rect x="0" y="0" width="150" height="50" rx="6" stroke-width="0.5"/>
+          <text class="ts" x="75" y="28" text-anchor="middle">3. Optimize</text>
+        </g>
+        <line x1="630" y1="25" x2="660" y2="25" class="arr" marker-end="url(#arrow)" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="4,4"/>
+        <g class="container c-teal" transform="translate(660, 0)">
+          <rect x="0" y="0" width="120" height="50" rx="6" stroke-width="0.5" stroke="#22c55e" stroke-width="2"/>
+          <text class="ts" x="60" y="28" text-anchor="middle">✓ Output</text>
+        </g>
+      </g>
+
+      <!-- KEY BENEFITS -->
+      <g transform="translate(40, 700)">
+        <text class="th" x="0" y="0">Why This Pattern Wins</text>
+        <g transform="translate(0, 25)">
+          <text class="ts" x="0" y="0">✅ Quality as Code — Criteria explicit, versioned, testable</text>
+          <text class="ts" x="0" y="20">✅ Zero Manual Review — Loop runs until criteria met</text>
+          <text class="ts" x="0" y="40">✅ Full Audit Trail — Every iteration logged; final pushed to Google Docs</text>
+          <text class="ts" x="0" y="60">✅ Extensible — Add criteria without changing loop structure</text>
+          <text class="ts" x="0" y="80">✅ Model-Agnostic — Swap Generator/Evaluator/Optimizer models independently</text>
+          <text class="ts" x="0" y="100">✅ Deterministic — Same criteria + same input = same quality guarantee</text>
+        </g>
+      </g>
+
+      <!-- WORKFLOW FILE -->
+      <g transform="translate(40, 820)">
+        <text class="th" x="0" y="0">Workflow: Evaluator_Optimizer.json</text>
+        <g transform="translate(0, 25)">
+          <text class="ts" x="0" y="0">Nodes: Generator Agent → Evaluator Agent → If (Finished?) → Optimizer Agent → Loop</text>
+          <text class="ts" x="0" y="20">Models: GPT-4o-mini (Gen/Eval) + DeepSeek R1 / GPT-4o-mini (Optimize)</text>
+          <text class="ts" x="0" y="40">Output: Google Docs (final) + Iteration History (implicit via loop state)</text>
+        </g>
+      </g>
+    </svg>
+  </div>
+</body>
+</html>
